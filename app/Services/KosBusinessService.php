@@ -1,485 +1,354 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Services;
 
-use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Contract;
+use App\Models\InvoiceItem;
 use App\Models\Kamar;
+use App\Models\Pembayaran;
+use App\Models\SecurityDeposit;
+use App\Models\Setting;
 use App\Models\Tagihan;
-use App\Models\User;
-use App\Services\KosBusinessService;
-use Illuminate\Http\Request;
+use App\Models\TenantProfile;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
+use RuntimeException;
 
-class BookingController extends Controller
+class KosBusinessService
 {
-    public function __construct(
-        protected KosBusinessService $kosService
-    ) {}
-
     /**
-     * Menampilkan daftar booking.
+     * POIN 5 & 7: Hitung nominal DP, tenggat waktu, dan simpan kebijakan saat booking dibuat.
      */
-    public function index(Request $request)
+    public function hitungDanSiapkanDp(Booking $booking, Kamar $kamar): Booking
     {
-        $request->validate([
-            'search' => ['nullable', 'string', 'max:100'],
-            'status' => [
-                'nullable',
-                Rule::in([
-                    'menunggu',
-                    'disetujui',
-                    'ditolak',
-                    'dibatalkan',
-                    'selesai',
-                ]),
-            ],
-        ]);
-
-        $query = Booking::with(['user', 'kamar', 'contract.deposit'])
-            ->latest('created_at');
-
-        if ($request->filled('search')) {
-            $keyword = trim($request->input('search'));
-
-            $query->where(function ($q) use ($keyword) {
-                $q->whereHas('user', function ($userQuery) use ($keyword) {
-                    $userQuery->where('name', 'like', "%{$keyword}%")
-                        ->orWhere('email', 'like', "%{$keyword}%");
-                })->orWhereHas('kamar', function ($kamarQuery) use ($keyword) {
-                    $kamarQuery->where(
-                        'nomor_kamar',
-                        'like',
-                        "%{$keyword}%"
-                    );
-                });
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        // Statistik seluruh booking
-        $totalBooking = Booking::count();
-        $waitingBooking = Booking::where('status', 'menunggu')->count();
-        $approvedBooking = Booking::where('status', 'disetujui')->count();
-        $rejectedBooking = Booking::where('status', 'ditolak')->count();
-        $cancelledBooking = Booking::where('status', 'dibatalkan')->count();
-        $completedBooking = Booking::where('status', 'selesai')->count();
-
-        // Data kamar dan akun penghuni untuk formulir tambah booking
-        $kamars = Kamar::orderBy('nomor_kamar')->get();
-        $penghunis = User::where('role', 'penghuni')
-            ->orderBy('name')
-            ->get();
-
-        $bookings = $query->paginate(10)->withQueryString();
-
-        return view('admin.booking.index', compact(
-            'bookings',
-            'kamars',
-            'penghunis',
-            'totalBooking',
-            'waitingBooking',
-            'approvedBooking',
-            'rejectedBooking',
-            'cancelledBooking',
-            'completedBooking'
-        ));
-    }
-
-    /**
-     * Menampilkan detail booking beserta kontrak dan deposit dalam bentuk JSON.
-     */
-    public function show(Booking $booking)
-    {
-        $booking->load(['user.tenantProfile', 'kamar', 'contract.deposit']);
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'id' => $booking->id,
-                'user_id' => $booking->user_id,
-                'kamar_id' => $booking->kamar_id,
-                'nama_penghuni' => $booking->user?->name,
-                'email' => $booking->user?->email,
-                'telepon' => $booking->user?->phone,
-                'nik' => $booking->user?->tenantProfile?->nik,
-                'nomor_kamar' => $booking->kamar?->nomor_kamar,
-                'tipe_kamar' => $booking->kamar?->tipe,
-                'harga_kamar' => $booking->kamar?->harga,
-                'tanggal_booking' => $booking->tanggal_booking?->format('Y-m-d'),
-                'tanggal_masuk' => $booking->tanggal_masuk?->format('Y-m-d'),
-                'tanggal_keluar' => $booking->tanggal_keluar?->format('Y-m-d'),
-                'nominal_dp' => $booking->nominal_dp,
-                'tenggat_dp' => $booking->tenggat_dp?->format('Y-m-d H:i:s'),
-                'kebijakan_dp' => $booking->kebijakan_dp,
-                'status' => $booking->status,
-                'catatan' => $booking->catatan,
-                'alasan_penolakan' => $booking->alasan_penolakan,
-                'contract' => $booking->contract,
-                'deposit' => $booking->contract?->deposit,
-                'created_at' => $booking->created_at?->format('Y-m-d H:i:s'),
-            ],
-        ]);
-    }
-
-    /**
-     * Menambahkan booking baru + menghitung nominal & tenggat DP otomatis.
-     */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'user_id' => [
-                'required',
-                'integer',
-                Rule::exists('users', 'id')->where('role', 'penghuni'),
-            ],
-            'kamar_id' => [
-                'required',
-                'integer',
-                'exists:kamars,id',
-            ],
-            'tanggal_booking' => [
-                'required',
-                'date',
-                'before_or_equal:today',
-            ],
-            'tanggal_masuk' => [
-                'required',
-                'date',
-                'after_or_equal:tanggal_booking',
-            ],
-            'catatan' => [
-                'nullable',
-                'string',
-                'max:500',
-            ],
-        ], [
-            'user_id.required' => 'Penghuni wajib dipilih.',
-            'user_id.exists' => 'Akun penghuni tidak valid.',
-            'kamar_id.required' => 'Kamar wajib dipilih.',
-            'kamar_id.exists' => 'Kamar yang dipilih tidak ditemukan.',
-            'tanggal_booking.required' => 'Tanggal booking wajib diisi.',
-            'tanggal_booking.before_or_equal' => 'Tanggal booking tidak boleh di masa depan.',
-            'tanggal_masuk.required' => 'Tanggal masuk wajib diisi.',
-            'tanggal_masuk.after_or_equal' => 'Tanggal masuk tidak boleh sebelum tanggal booking.',
-            'catatan.max' => 'Catatan maksimal 500 karakter.',
-        ]);
-
-        $result = DB::transaction(function () use ($validated) {
-            $user = User::where('role', 'penghuni')
-                ->whereKey($validated['user_id'])
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            // Satu penghuni hanya boleh memiliki satu booking aktif
-            $bookingAktif = Booking::where('user_id', $user->id)
-                ->whereIn('status', ['menunggu', 'disetujui'])
-                ->exists();
-
-            if ($bookingAktif) {
-                return [
-                    'success' => false,
-                    'message' => 'Penghuni tersebut masih memiliki booking aktif.',
-                ];
-            }
-
-            $kamar = Kamar::whereKey($validated['kamar_id'])
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if ($kamar->status === 'maintenance') {
-                return [
-                    'success' => false,
-                    'message' => 'Kamar sedang dalam perbaikan dan tidak dapat dipesan.',
-                ];
-            }
-
-            if ($kamar->jumlah_penghuni >= $kamar->kapasitas) {
-                return [
-                    'success' => false,
-                    'message' => 'Kapasitas kamar sudah penuh.',
-                ];
-            }
-
-            // Booking menunggu juga diperhitungkan untuk mencegah double booking
-            $bookingMenunggu = Booking::where('kamar_id', $kamar->id)
-                ->where('status', 'menunggu')
-                ->count();
-
-            $sisaKapasitas = $kamar->kapasitas
-                - $kamar->jumlah_penghuni
-                - $bookingMenunggu;
-
-            if ($sisaKapasitas <= 0) {
-                return [
-                    'success' => false,
-                    'message' => 'Sisa kapasitas kamar sudah dialokasikan untuk booking lain.',
-                ];
-            }
-
-            $booking = Booking::create([
-                'user_id' => $user->id,
-                'kamar_id' => $kamar->id,
-                'tanggal_booking' => $validated['tanggal_booking'],
-                'tanggal_masuk' => $validated['tanggal_masuk'],
-                'status' => 'menunggu',
-                'catatan' => $validated['catatan'] ?? null,
-            ]);
-
-            // Hitung nominal DP, tenggat waktu, dan simpan kebijakan DP
-            $this->kosService->hitungDanSiapkanDp($booking, $kamar);
-
-            return [
-                'success' => true,
-                'message' => 'Booking berhasil ditambahkan beserta instruksi DP.',
-            ];
-        }, 3);
-
-        return redirect()
-            ->route('admin.booking.index')
-            ->with(
-                $result['success'] ? 'success' : 'error',
-                $result['message']
-            );
-    }
-
-    /**
-     * Menyetujui booking (Check-In):
-     * Membuat Kontrak Aktif, Security Deposit, dan Tagihan Pertama beserta rincian item.
-     */
-    public function approve(Request $request, Booking $booking)
-    {
-        $result = DB::transaction(function () use ($request, $booking) {
-            $data = Booking::whereKey($booking->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if ($data->status !== 'menunggu') {
-                return [
-                    'success' => false,
-                    'message' => 'Booking ini sudah diproses sebelumnya.',
-                ];
-            }
-
-            $user = User::whereKey($data->user_id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            $bookingLain = Booking::where('user_id', $user->id)
-                ->where('id', '!=', $data->id)
-                ->where('status', 'disetujui')
-                ->exists();
-
-            if ($bookingLain) {
-                return [
-                    'success' => false,
-                    'message' => 'Penghuni sudah memiliki booking yang disetujui.',
-                ];
-            }
-
-            $kamar = Kamar::whereKey($data->kamar_id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if ($kamar->status === 'maintenance') {
-                return [
-                    'success' => false,
-                    'message' => 'Booking tidak dapat disetujui karena kamar sedang maintenance.',
-                ];
-            }
-
-            if ($kamar->jumlah_penghuni >= $kamar->kapasitas) {
-                return [
-                    'success' => false,
-                    'message' => 'Booking tidak dapat disetujui karena kapasitas kamar sudah penuh.',
-                ];
-            }
-
-            $bookingMenungguLain = Booking::where('kamar_id', $kamar->id)
-                ->where('status', 'menunggu')
-                ->where('id', '!=', $data->id)
-                ->count();
-
-            $sisaKapasitas = $kamar->kapasitas
-                - $kamar->jumlah_penghuni
-                - $bookingMenungguLain;
-
-            if ($sisaKapasitas <= 0) {
-                return [
-                    'success' => false,
-                    'message' => 'Kapasitas kamar tidak mencukupi untuk menyetujui booking ini.',
-                ];
-            }
-
-            $data->update([
-                'status' => 'disetujui',
-                'alasan_penolakan' => null,
-            ]);
-
-            $jumlahPenghuniBaru = $kamar->jumlah_penghuni + 1;
-
-            $kamar->update([
-                'jumlah_penghuni' => $jumlahPenghuniBaru,
-                'status' => $jumlahPenghuniBaru >= $kamar->kapasitas
-                    ? 'terisi'
-                    : 'tersedia',
-            ]);
-
-            // Buat Kontrak Aktif, Security Deposit, Aktifkan Profil Penghuni, & Terbitkan Invoice Pertama
-            $this->kosService->prosesCheckInDanKontrak(
-                $data,
-                $request->input('kondisi_awal'),
-                $request->input('siklus_tagihan', 'bulanan'),
-                $request->filled('nominal_deposit') ? (int) $request->input('nominal_deposit') : null
-            );
-
-            return [
-                'success' => true,
-                'message' => 'Booking berhasil disetujui. Kontrak aktif, security deposit, dan tagihan awal telah dibuat.',
-            ];
-        }, 3);
-
-        return redirect()
-            ->route('admin.booking.index')
-            ->with(
-                $result['success'] ? 'success' : 'error',
-                $result['message']
-            );
-    }
-
-    /**
-     * Proses Check-Out penghuni, perhitungan potongan deposit, dan pelepasan kamar.
-     */
-    public function checkout(Request $request, Booking $booking)
-    {
-        $validated = $request->validate([
-            'kondisi_akhir' => ['required', 'string', 'max:1000'],
-            'potongan_kerusakan' => ['nullable', 'integer', 'min:0'],
-            'catatan_potongan' => ['nullable', 'string', 'max:500'],
-            'status_kamar' => ['nullable', Rule::in(['tersedia', 'maintenance'])],
-        ], [
-            'kondisi_akhir.required' => 'Catatan kondisi akhir kamar saat check-out wajib diisi.',
-        ]);
-
-        $contract = Contract::where('booking_id', $booking->id)
-            ->where('status', 'aktif')
-            ->first();
-
-        if (!$contract) {
-            return redirect()
-                ->route('admin.booking.index')
-                ->with('error', 'Kontrak aktif untuk booking ini tidak ditemukan.');
-        }
-
-        $hasil = $this->kosService->prosesCheckOut(
-            $contract,
-            $validated['kondisi_akhir'],
-            (int) ($validated['potongan_kerusakan'] ?? 0),
-            $validated['catatan_potongan'] ?? null,
-            $validated['status_kamar'] ?? 'tersedia'
+        $dpTipe = Setting::getVal('dp_tipe', 'persentase');
+        $dpNilai = (int) Setting::getVal('dp_nilai', 30);
+        $tenggatJam = (int) Setting::getVal('tenggat_dp_jam', 24);
+        $kebijakanDp = Setting::getVal(
+            'kebijakan_dp',
+            'DP dibayarkan sebelum tenggat waktu. Pembatalan sepihak mengikuti aturan kos.'
         );
 
-        $dikembalikan = number_format($hasil['deposit']?->nominal_dikembalikan ?? 0, 0, ',', '.');
+        $nominalDp = $dpTipe === 'persentase'
+            ? (int) round(($dpNilai / 100) * $kamar->harga)
+            : $dpNilai;
 
-        return redirect()
-            ->route('admin.booking.index')
-            ->with('success', "Check-out berhasil diproses. Sisa deposit dikembalikan: Rp {$dikembalikan}.");
-    }
-
-    /**
-     * Menolak booking.
-     */
-    public function reject(Request $request, Booking $booking)
-    {
-        $validated = $request->validate([
-            'alasan_penolakan' => [
-                'required',
-                'string',
-                'min:5',
-                'max:1000',
-            ],
-        ], [
-            'alasan_penolakan.required' => 'Alasan penolakan wajib diisi.',
-            'alasan_penolakan.min' => 'Alasan penolakan minimal 5 karakter.',
-            'alasan_penolakan.max' => 'Alasan penolakan maksimal 1000 karakter.',
+        $booking->update([
+            'nominal_dp' => $nominalDp,
+            'tenggat_dp' => now()->addHours($tenggatJam),
+            'kebijakan_dp' => $kebijakanDp,
         ]);
 
-        $result = DB::transaction(function () use ($booking, $validated) {
-            $data = Booking::whereKey($booking->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if ($data->status !== 'menunggu') {
-                return false;
-            }
-
-            $data->update([
-                'status' => 'ditolak',
-                'alasan_penolakan' => trim($validated['alasan_penolakan']),
-            ]);
-
-            return true;
-        }, 3);
-
-        return redirect()
-            ->route('admin.booking.index')
-            ->with(
-                $result ? 'success' : 'error',
-                $result
-                    ? 'Booking berhasil ditolak.'
-                    : 'Booking ini sudah diproses sebelumnya.'
-            );
+        return $booking->fresh();
     }
 
     /**
-     * Menghapus booking yang belum memiliki tagihan.
+     * POIN 5: Proses Check-In & Pembuatan Kontrak Aktif + Security Deposit.
      */
-    public function destroy(Booking $booking)
+    public function prosesCheckInDanKontrak(
+        Booking $booking,
+        ?string $kondisiAwal = null,
+        string $siklusTagihan = 'bulanan',
+        ?int $nominalDeposit = null
+    ): Contract {
+        return DB::transaction(function () use ($booking, $kondisiAwal, $siklusTagihan, $nominalDeposit) {
+            $booking = Booking::with(['kamar', 'user'])->lockForUpdate()->findOrFail($booking->id);
+
+            if ($booking->contract()->exists()) {
+                return $booking->contract;
+            }
+
+            $kamar = $booking->kamar;
+            $tanggalMulai = $booking->tanggal_masuk ?? today();
+            $tanggalAkhir = match ($siklusTagihan) {
+                'per_3_bulan' => Carbon::parse($tanggalMulai)->addMonths(3),
+                'tahunan' => Carbon::parse($tanggalMulai)->addYear(),
+                default => Carbon::parse($tanggalMulai)->addMonth(),
+            };
+
+            // 1. Buat Kontrak Sewa Aktif
+            $contract = Contract::create([
+                'booking_id' => $booking->id,
+                'user_id' => $booking->user_id,
+                'kamar_id' => $kamar->id,
+                'tanggal_mulai' => $tanggalMulai,
+                'tanggal_akhir' => $tanggalAkhir,
+                'harga_sewa' => $kamar->harga,
+                'siklus_tagihan' => $siklusTagihan,
+                'kondisi_awal' => $kondisiAwal ?? 'Kamar dalam kondisi bersih, kunci lengkap, dan fasilitas berfungsi baik.',
+                'status' => 'aktif',
+            ]);
+
+            // 2. Buat Security Deposit (Uang Jaminan)
+            $depositAmount = $nominalDeposit ?? (int) Setting::getVal('nominal_deposit_default', 500000);
+            SecurityDeposit::create([
+                'contract_id' => $contract->id,
+                'nominal_deposit' => $depositAmount,
+                'potongan_kerusakan' => 0,
+                'potongan_tunggakan' => 0,
+                'nominal_dikembalikan' => $depositAmount,
+                'status' => 'ditahan',
+            ]);
+
+            // 3. Aktifkan status penghuni di TenantProfile
+            TenantProfile::updateOrCreate(
+                ['user_id' => $booking->user_id],
+                ['status_penghuni' => 'aktif']
+            );
+
+            // 4. Terbitkan Tagihan Pertama beserta Rincian Item (memperhitungkan DP jika sudah lunas)
+            $this->terbitkanTagihanDenganItem($contract, $tanggalMulai->format('Y-m'), [], true);
+
+            return $contract;
+        });
+    }
+
+    /**
+     * POIN 6: Terbitkan Tagihan (Invoice) beserta rincian item (sewa pokok, listrik, air, parkir, dll).
+     */
+    public function terbitkanTagihanDenganItem(
+        Contract $contract,
+        string $periode,
+        array $biayaTambahan = [],
+        bool $potongDpJikaAda = false
+    ): Tagihan {
+        return DB::transaction(function () use ($contract, $periode, $biayaTambahan, $potongDpJikaAda) {
+            $existing = Tagihan::where('contract_id', $contract->id)
+                ->where('periode', $periode)
+                ->first();
+
+            if ($existing) {
+                return $existing;
+            }
+
+            $nomorInvoice = 'INV-' . str_replace('-', '', $periode) . '-' . str_pad((string) $contract->id, 4, '0', STR_PAD_LEFT) . '-' . rand(10, 99);
+
+            $tagihan = Tagihan::create([
+                'nomor_invoice' => $nomorInvoice,
+                'booking_id' => $contract->booking_id,
+                'contract_id' => $contract->id,
+                'periode' => $periode,
+                'jumlah' => 0,
+                'denda' => 0,
+                'tanggal_terbit' => today(),
+                'tanggal_jatuh_tempo' => today()->addDays(7),
+                'status' => 'belum_dibayar',
+                'keterangan' => "Tagihan sewa kamar {$contract->kamar->nomor_kamar} periode {$periode}.",
+            ]);
+
+            // Item wajib: Sewa Pokok
+            InvoiceItem::create([
+                'tagihan_id' => $tagihan->id,
+                'nama_item' => "Sewa Pokok Kamar {$contract->kamar->nomor_kamar} ({$periode})",
+                'jenis' => 'sewa_pokok',
+                'nominal' => $contract->harga_sewa,
+            ]);
+
+            $totalTagihan = $contract->harga_sewa;
+
+            // Item tambahan (listrik, air, parkir, kebersihan, dll.)
+            foreach ($biayaTambahan as $item) {
+                $nominal = (int) ($item['nominal'] ?? 0);
+                if ($nominal <= 0) {
+                    continue;
+                }
+
+                InvoiceItem::create([
+                    'tagihan_id' => $tagihan->id,
+                    'nama_item' => $item['nama_item'],
+                    'jenis' => $item['jenis'] ?? 'lainnya',
+                    'nominal' => $nominal,
+                    'keterangan' => $item['keterangan'] ?? null,
+                ]);
+
+                $totalTagihan += $nominal;
+            }
+
+            $tagihan->update(['jumlah' => $totalTagihan]);
+
+            // Jika DP booking sudah dibayar dan disetujui, catat sebagai pembayaran awal pada tagihan pertama
+            if ($potongDpJikaAda && $contract->booking_id) {
+                $dpTerbayar = (int) Pembayaran::where('booking_id', $contract->booking_id)
+                    ->where('jenis_pembayaran', 'dp_booking')
+                    ->where('status', 'disetujui')
+                    ->sum('jumlah_bayar');
+
+                if ($dpTerbayar > 0) {
+                    Pembayaran::create([
+                        'tagihan_id' => $tagihan->id,
+                        'booking_id' => $contract->booking_id,
+                        'jenis_pembayaran' => 'cicilan_tagihan',
+                        'user_id' => $contract->user_id,
+                        'metode_pembayaran' => 'transfer',
+                        'jumlah_bayar' => min($dpTerbayar, $totalTagihan),
+                        'tanggal_pembayaran' => today(),
+                        'status' => 'disetujui',
+                        'tanggal_verifikasi' => now(),
+                        'catatan' => 'Konversi otomatis dari DP Booking yang telah diverifikasi.',
+                    ]);
+
+                    $this->hitungUlangSaldoTagihan($tagihan);
+                }
+            }
+
+            return $tagihan->fresh(['items', 'pembayarans']);
+        });
+    }
+
+    /**
+     * POIN 6: Hitung & terapkan denda keterlambatan setelah melewati masa tenggang.
+     */
+    public function hitungDendaKeterlambatan(Tagihan $tagihan): Tagihan
     {
-        $result = DB::transaction(function () use ($booking) {
-            $data = Booking::whereKey($booking->id)
+        if (in_array($tagihan->status, ['lunas', 'dibatalkan'], true)) {
+            return $tagihan;
+        }
+
+        $masaTenggang = (int) Setting::getVal('masa_tenggang_hari', 3);
+        $dendaHarian = (int) Setting::getVal('denda_harian', 25000);
+        $batasDenda = $tagihan->tanggal_jatuh_tempo->copy()->addDays($masaTenggang);
+
+        if (today()->gt($batasDenda)) {
+            $hariTerlambat = $batasDenda->diffInDays(today());
+            $totalDenda = $hariTerlambat * $dendaHarian;
+
+            $tagihan->update([
+                'denda' => $totalDenda,
+                'status' => $tagihan->total_terbayar > 0 ? 'dibayar_sebagian' : 'terlambat',
+            ]);
+        }
+
+        return $tagihan->fresh();
+    }
+
+    /**
+     * POIN 7: Validasi Cicilan & Hitung Ulang Akumulasi Pembayaran + Sisa Tagihan.
+     */
+    public function hitungUlangSaldoTagihan(Tagihan $tagihan): Tagihan
+    {
+        $tagihan = $tagihan->fresh();
+        $totalKewajiban = $tagihan->jumlah + $tagihan->denda;
+        $totalTerbayar = (int) $tagihan->pembayarans()
+            ->where('status', 'disetujui')
+            ->sum('jumlah_bayar');
+
+        $adaMenungguVerifikasi = $tagihan->pembayarans()
+            ->where('status', 'menunggu_verifikasi')
+            ->exists();
+
+        if ($totalTerbayar >= $totalKewajiban && $totalKewajiban > 0) {
+            $statusBaru = 'lunas';
+        } elseif ($adaMenungguVerifikasi) {
+            $statusBaru = 'menunggu_verifikasi';
+        } elseif ($totalTerbayar > 0) {
+            $statusBaru = 'dibayar_sebagian';
+        } elseif (today()->gt($tagihan->tanggal_jatuh_tempo)) {
+            $statusBaru = 'terlambat';
+        } else {
+            $statusBaru = 'belum_dibayar';
+        }
+
+        $tagihan->update(['status' => $statusBaru]);
+
+        return $tagihan->fresh();
+    }
+
+    /**
+     * POIN 8: Proses Check-Out, Perhitungan Potongan Deposit, dan Pelepasan Kamar.
+     */
+    public function prosesCheckOut(
+        Contract $contract,
+        string $kondisiAkhir,
+        int $potonganKerusakan = 0,
+        ?string $catatanPotongan = null,
+        string $statusKamarSetelahCheckout = 'tersedia'
+    ): array {
+        if ($contract->status !== 'aktif') {
+            throw new RuntimeException('Kontrak ini sudah tidak aktif.');
+        }
+
+        return DB::transaction(function () use (
+            $contract,
+            $kondisiAkhir,
+            $potonganKerusakan,
+            $catatanPotongan,
+            $statusKamarSetelahCheckout
+        ) {
+            $contract = Contract::with(['kamar', 'booking', 'deposit', 'tagihans'])
                 ->lockForUpdate()
-                ->firstOrFail();
+                ->findOrFail($contract->id);
 
-            if (!in_array($data->status, [
-                'menunggu',
-                'ditolak',
-                'dibatalkan',
-            ], true)) {
-                return [
-                    'success' => false,
-                    'message' => 'Booking yang sudah disetujui atau selesai tidak dapat dihapus melalui menu ini.',
-                ];
+            // 1. Hitung sisa tunggakan tagihan yang belum lunas pada kontrak ini
+            $sisaTunggakan = 0;
+            foreach ($contract->tagihans as $tagihan) {
+                if (!in_array($tagihan->status, ['lunas', 'dibatalkan'], true)) {
+                    $sisaTunggakan += $tagihan->sisa_tagihan;
+                }
             }
 
-            $hasInvoice = Tagihan::where('booking_id', $data->id)
-                ->exists();
+            // 2. Hitung potongan dan pengembalian Security Deposit
+            $deposit = $contract->deposit;
+            $ringkasanDeposit = null;
 
-            if ($hasInvoice) {
-                return [
-                    'success' => false,
-                    'message' => 'Booking tidak dapat dihapus karena sudah memiliki tagihan.',
-                ];
+            if ($deposit) {
+                $totalPotongan = $potonganKerusakan + $sisaTunggakan;
+                $dikembalikan = max(0, $deposit->nominal_deposit - $totalPotongan);
+
+                $statusDeposit = match (true) {
+                    $dikembalikan === $deposit->nominal_deposit => 'dikembalikan_penuh',
+                    $dikembalikan > 0 => 'dikembalikan_sebagian',
+                    default => 'hangus',
+                };
+
+                $deposit->update([
+                    'potongan_kerusakan' => $potonganKerusakan,
+                    'potongan_tunggakan' => $sisaTunggakan,
+                    'nominal_dikembalikan' => $dikembalikan,
+                    'catatan_potongan' => $catatanPotongan,
+                    'status' => $statusDeposit,
+                    'tanggal_pengembalian' => today(),
+                ]);
+
+                $ringkasanDeposit = $deposit->fresh();
             }
 
-            $data->delete();
+            // 3. Tutup Kontrak & Booking terkait
+            $contract->update([
+                'tanggal_akhir' => today(),
+                'kondisi_akhir' => $kondisiAkhir,
+                'status' => 'selesai',
+            ]);
+
+            if ($contract->booking) {
+                $contract->booking->update([
+                    'tanggal_keluar' => today(),
+                    'status' => 'selesai',
+                ]);
+            }
+
+            // 4. Ubah status penghuni menjadi keluar
+            TenantProfile::where('user_id', $contract->user_id)
+                ->update(['status_penghuni' => 'keluar']);
+
+            // 5. Kurangi jumlah penghuni kamar dan perbarui status kamar ('tersedia' atau 'maintenance')
+            $kamar = $contract->kamar;
+            $penghuniBaru = max(0, $kamar->jumlah_penghuni - 1);
+            $kamar->jumlah_penghuni = $penghuniBaru;
+
+            if ($statusKamarSetelahCheckout === 'maintenance') {
+                $kamar->status = 'maintenance';
+                $kamar->save();
+            } else {
+                $kamar->status = 'tersedia';
+                $kamar->perbaruiStatusOtomatis();
+            }
 
             return [
-                'success' => true,
-                'message' => 'Data booking berhasil dihapus.',
+                'contract' => $contract->fresh(),
+                'deposit' => $ringkasanDeposit,
+                'sisa_tunggakan' => $sisaTunggakan,
             ];
-        }, 3);
-
-        return redirect()
-            ->route('admin.booking.index')
-            ->with(
-                $result['success'] ? 'success' : 'error',
-                $result['message']
-            );
+        });
     }
 }

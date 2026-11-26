@@ -11,6 +11,7 @@ class Kamar extends Model
 
     protected $fillable = [
         'nomor_kamar',
+        'lantai',
         'tipe',
         'harga',
         'kapasitas',
@@ -29,6 +30,7 @@ class Kamar extends Model
             'kapasitas' => 'integer',
             'jumlah_penghuni' => 'integer',
             'fasilitas' => 'array',
+            'lantai' => 'integer',
         ];
     }
 
