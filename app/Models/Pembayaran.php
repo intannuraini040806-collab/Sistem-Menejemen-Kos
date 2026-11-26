@@ -9,11 +9,14 @@ class Pembayaran extends Model
 {
     protected $fillable = [
         'tagihan_id',
+        'booking_id',
+        'jenis_pembayaran',
         'user_id',
-        'metode',
+        'metode_pembayaran',
         'jumlah_bayar',
         'tanggal_pembayaran',
-        'bukti',
+        'bukti_pembayaran',
+        'referensi_gateway',
         'status',
         'diverifikasi_oleh',
         'tanggal_verifikasi',
@@ -32,6 +35,11 @@ class Pembayaran extends Model
     public function tagihan(): BelongsTo
     {
         return $this->belongsTo(Tagihan::class);
+    }
+
+    public function booking(): BelongsTo
+    {
+        return $this->belongsTo(Booking::class);
     }
 
     public function user(): BelongsTo

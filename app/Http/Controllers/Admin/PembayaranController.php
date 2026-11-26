@@ -3,14 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
 use App\Models\Pembayaran;
 use App\Models\Tagihan;
+use App\Services\KosBusinessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class PembayaranController extends Controller
 {
+    public function __construct(
+        protected KosBusinessService $kosService
+    ) {}
+
     /**
      * Menampilkan daftar pembayaran dan statistik.
      */
@@ -30,6 +36,7 @@ class PembayaranController extends Controller
 
         $query = Pembayaran::with([
             'user',
+            'booking.kamar',
             'tagihan.booking.kamar',
             'verifikator',
         ])->latest();
@@ -43,6 +50,15 @@ class PembayaranController extends Controller
                         ->orWhere('email', 'like', "%{$keyword}%");
                 })->orWhereHas(
                     'tagihan.booking.kamar',
+                    function ($kamarQuery) use ($keyword) {
+                        $kamarQuery->where(
+                            'nomor_kamar',
+                            'like',
+                            "%{$keyword}%"
+                        );
+                    }
+                )->orWhereHas(
+                    'booking.kamar',
                     function ($kamarQuery) use ($keyword) {
                         $kamarQuery->where(
                             'nomor_kamar',
@@ -64,20 +80,13 @@ class PembayaranController extends Controller
             });
         }
 
-        // Statistik keseluruhan, tidak terpengaruh filter tabel.
         $totalPembayaran = Pembayaran::count();
-
         $totalDiterima = Pembayaran::where('status', 'disetujui')
             ->sum('jumlah_bayar');
-
         $jumlahTerverifikasi = Pembayaran::where('status', 'disetujui')
             ->count();
-
-        $jumlahMenunggu = Pembayaran::where(
-            'status',
-            'menunggu_verifikasi'
-        )->count();
-
+        $jumlahMenunggu = Pembayaran::where('status', 'menunggu_verifikasi')
+            ->count();
         $jumlahDitolak = Pembayaran::where('status', 'ditolak')
             ->count();
 
@@ -94,7 +103,7 @@ class PembayaranController extends Controller
     }
 
     /**
-     * Memverifikasi pembayaran penghuni.
+     * Memverifikasi pembayaran penghuni (mendukung DP Booking maupun Cicilan Tagihan).
      */
     public function verifikasi(Pembayaran $pembayaran)
     {
@@ -110,6 +119,40 @@ class PembayaranController extends Controller
                 ];
             }
 
+            // Kasus 1: Pembayaran DP Booking
+            if ($dataPembayaran->jenis_pembayaran === 'dp_booking') {
+                $booking = Booking::whereKey($dataPembayaran->booking_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$booking) {
+                    return [
+                        'berhasil' => false,
+                        'pesan' => 'Data booking terkait tidak ditemukan.',
+                    ];
+                }
+
+                if ((int) $dataPembayaran->jumlah_bayar < (int) $booking->nominal_dp) {
+                    return [
+                        'berhasil' => false,
+                        'pesan' => 'Nominal transfer DP kurang dari ketentuan minimum DP.',
+                    ];
+                }
+
+                $dataPembayaran->update([
+                    'status' => 'disetujui',
+                    'diverifikasi_oleh' => Auth::id(),
+                    'tanggal_verifikasi' => now(),
+                    'catatan' => 'Pembayaran DP booking berhasil diverifikasi oleh admin.',
+                ]);
+
+                return [
+                    'berhasil' => true,
+                    'pesan' => 'Pembayaran DP booking berhasil diverifikasi. Silakan setujui booking untuk check-in penghuni.',
+                ];
+            }
+
+            // Kasus 2: Pembayaran Tagihan (mendukung cicilan bertahap maupun pelunasan penuh)
             $tagihan = Tagihan::whereKey($dataPembayaran->tagihan_id)
                 ->lockForUpdate()
                 ->first();
@@ -124,29 +167,23 @@ class PembayaranController extends Controller
             if ($tagihan->status === 'lunas') {
                 return [
                     'berhasil' => false,
-                    'pesan' => 'Tagihan ini sudah lunas.',
+                    'pesan' => 'Tagihan ini sudah berstatus lunas.',
                 ];
             }
 
-            // Pembayaran harus sesuai dengan nominal tagihan.
-            if ((int) $dataPembayaran->jumlah_bayar !== (int) $tagihan->jumlah) {
+            $sisaTagihan = $tagihan->sisa_tagihan;
+
+            if ((int) $dataPembayaran->jumlah_bayar <= 0) {
                 return [
                     'berhasil' => false,
-                    'pesan' => 'Nominal pembayaran tidak sesuai dengan jumlah tagihan.',
+                    'pesan' => 'Nominal pembayaran harus lebih dari 0.',
                 ];
             }
 
-            $sudahAdaPembayaranDisetujui = Pembayaran::where(
-                'tagihan_id',
-                $tagihan->id
-            )->where('status', 'disetujui')
-                ->where('id', '!=', $dataPembayaran->id)
-                ->exists();
-
-            if ($sudahAdaPembayaranDisetujui) {
+            if ((int) $dataPembayaran->jumlah_bayar > $sisaTagihan) {
                 return [
                     'berhasil' => false,
-                    'pesan' => 'Tagihan sudah memiliki pembayaran yang disetujui.',
+                    'pesan' => 'Nominal pembayaran melebihi sisa tagihan yang harus dibayar.',
                 ];
             }
 
@@ -157,13 +194,15 @@ class PembayaranController extends Controller
                 'catatan' => 'Pembayaran berhasil diverifikasi oleh admin.',
             ]);
 
-            $tagihan->update([
-                'status' => 'lunas',
-            ]);
+            $tagihanTerbaru = $this->kosService->hitungUlangSaldoTagihan($tagihan);
+
+            $pesanStatus = $tagihanTerbaru->status === 'lunas'
+                ? 'Pembayaran berhasil diverifikasi dan tagihan telah lunas.'
+                : 'Cicilan pembayaran berhasil diverifikasi. Status tagihan diperbarui menjadi dibayar sebagian.';
 
             return [
                 'berhasil' => true,
-                'pesan' => 'Pembayaran berhasil diverifikasi dan tagihan telah ditandai lunas.',
+                'pesan' => $pesanStatus,
             ];
         }, 3);
 
@@ -175,7 +214,7 @@ class PembayaranController extends Controller
     }
 
     /**
-     * Menolak pembayaran penghuni.
+     * Menolak pembayaran penghuni dan menghitung ulang saldo tagihan.
      */
     public function tolak(Request $request, Pembayaran $pembayaran)
     {
@@ -204,10 +243,6 @@ class PembayaranController extends Controller
                 ];
             }
 
-            $tagihan = Tagihan::whereKey($dataPembayaran->tagihan_id)
-                ->lockForUpdate()
-                ->first();
-
             $dataPembayaran->update([
                 'status' => 'ditolak',
                 'diverifikasi_oleh' => Auth::id(),
@@ -215,28 +250,14 @@ class PembayaranController extends Controller
                 'catatan' => trim($validated['catatan']),
             ]);
 
-            if ($tagihan && $tagihan->status !== 'lunas') {
-                // Jika masih ada pembayaran lain yang menunggu,
-                // tagihan tetap menunggu verifikasi.
-                $masihMenunggu = Pembayaran::where(
-                    'tagihan_id',
-                    $tagihan->id
-                )->where('status', 'menunggu_verifikasi')
-                    ->where('id', '!=', $dataPembayaran->id)
-                    ->exists();
+            if ($dataPembayaran->tagihan_id) {
+                $tagihan = Tagihan::whereKey($dataPembayaran->tagihan_id)
+                    ->lockForUpdate()
+                    ->first();
 
-                if ($masihMenunggu) {
-                    $statusTagihan = 'menunggu_verifikasi';
-                } else {
-                    $statusTagihan = $tagihan->tanggal_jatuh_tempo
-                        && $tagihan->tanggal_jatuh_tempo->lt(today())
-                            ? 'terlambat'
-                            : 'belum_dibayar';
+                if ($tagihan) {
+                    $this->kosService->hitungUlangSaldoTagihan($tagihan);
                 }
-
-                $tagihan->update([
-                    'status' => $statusTagihan,
-                ]);
             }
 
             return [

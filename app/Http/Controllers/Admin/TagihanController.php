@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Models\Contract;
+use App\Models\InvoiceItem;
 use App\Models\Tagihan;
 use App\Models\User;
+use App\Services\KosBusinessService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,11 +19,17 @@ use Illuminate\View\View;
 
 class TagihanController extends Controller
 {
+    public function __construct(
+        protected KosBusinessService $kosService
+    ) {}
+
     public function index(Request $request): View
     {
         $semuaTagihan = Tagihan::with([
             'booking.user',
             'booking.kamar',
+            'contract',
+            'items',
             'pembayarans.user',
             'pembayarans.verifikator',
         ])->orderByDesc('periode')->orderByDesc('id')->get();
@@ -28,19 +37,31 @@ class TagihanController extends Controller
         $hariIni = today();
 
         $semuaTagihan->each(function (Tagihan $tagihan) use ($hariIni): void {
-            $pembayaranDisetujui = $tagihan->pembayarans
-                ->contains(fn ($pembayaran) => $pembayaran->status === 'disetujui');
+            // 1. Hitung denda keterlambatan otomatis jika lewat masa tenggang
+            $tagihan = $this->kosService->hitungDendaKeterlambatan($tagihan);
+
+            // 2. Hitung total terbayar (akumulasi cicilan disetujui) & sisa tagihan
+            $totalTerbayar = (int) $tagihan->pembayarans
+                ->where('status', 'disetujui')
+                ->sum('jumlah_bayar');
+
+            $totalKewajiban = (int) $tagihan->jumlah + (int) $tagihan->denda;
+            $sisaTagihan = max(0, $totalKewajiban - $totalTerbayar);
 
             $adaMenungguVerifikasi = $tagihan->pembayarans
                 ->contains(fn ($pembayaran) => $pembayaran->status === 'menunggu_verifikasi');
 
             $pembayaranTerakhir = $tagihan->pembayarans->sortByDesc('id')->first();
             $tagihan->setAttribute('pembayaran_terakhir', $pembayaranTerakhir);
+            $tagihan->setAttribute('total_terbayar', $totalTerbayar);
+            $tagihan->setAttribute('sisa_tagihan', $sisaTagihan);
 
-            if ($tagihan->status === 'lunas' || $pembayaranDisetujui) {
+            if ($tagihan->status === 'lunas' || ($totalTerbayar >= $totalKewajiban && $totalKewajiban > 0)) {
                 $status = 'lunas';
             } elseif ($adaMenungguVerifikasi) {
                 $status = 'menunggu_verifikasi';
+            } elseif ($totalTerbayar > 0) {
+                $status = 'dibayar_sebagian';
             } elseif (
                 $tagihan->tanggal_jatuh_tempo &&
                 $tagihan->tanggal_jatuh_tempo->lt($hariIni)
@@ -57,10 +78,11 @@ class TagihanController extends Controller
             'total' => $semuaTagihan->count(),
             'lunas' => $semuaTagihan->where('status_tampilan', 'lunas')->count(),
             'menunggu_verifikasi' => $semuaTagihan->where('status_tampilan', 'menunggu_verifikasi')->count(),
+            'dibayar_sebagian' => $semuaTagihan->where('status_tampilan', 'dibayar_sebagian')->count(),
             'belum_dibayar' => $semuaTagihan->where('status_tampilan', 'belum_dibayar')->count(),
             'terlambat' => $semuaTagihan->where('status_tampilan', 'terlambat')->count(),
-            'total_nominal' => $semuaTagihan->sum('jumlah'),
-            'nominal_lunas' => $semuaTagihan->where('status_tampilan', 'lunas')->sum('jumlah'),
+            'total_nominal' => $semuaTagihan->sum(fn ($t) => $t->jumlah + $t->denda),
+            'nominal_lunas' => $semuaTagihan->where('status_tampilan', 'lunas')->sum(fn ($t) => $t->jumlah + $t->denda),
         ];
 
         $kataKunci = trim((string) $request->query('q', ''));
@@ -70,7 +92,7 @@ class TagihanController extends Controller
         $hasilFilter = $semuaTagihan->filter(function (Tagihan $tagihan) use ($kataKunci, $statusFilter, $periodeFilter): bool {
             $nama = $tagihan->booking?->user?->name ?? '';
             $kamar = $tagihan->booking?->kamar?->nomor_kamar ?? '';
-            $idTagihan = 'TAG-' . str_pad((string) $tagihan->id, 5, '0', STR_PAD_LEFT);
+            $idTagihan = $tagihan->nomor_invoice ?? ('TAG-' . str_pad((string) $tagihan->id, 5, '0', STR_PAD_LEFT));
 
             $cocokKataKunci = $kataKunci === '' ||
                 str_contains(mb_strtolower($nama), mb_strtolower($kataKunci)) ||
@@ -136,16 +158,56 @@ class TagihanController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($data): void {
-            Tagihan::create([
+        $contract = Contract::where('booking_id', $booking->id)
+            ->where('status', 'aktif')
+            ->first();
+
+        DB::transaction(function () use ($data, $booking, $contract): void {
+            $nomorInvoice = 'INV-' . str_replace('-', '', $data['periode']) . '-' . str_pad((string) $booking->id, 4, '0', STR_PAD_LEFT) . '-' . rand(10, 99);
+
+            // Jika admin mengirimkan array items tambahan (listrik/air/parkir), hitung total otomatis
+            $itemsInput = $data['items'] ?? [];
+            $totalNominal = (int) $data['jumlah'];
+
+            if (!empty($itemsInput)) {
+                $totalNominal = collect($itemsInput)->sum(fn ($item) => (int) ($item['nominal'] ?? 0));
+            }
+
+            $tagihan = Tagihan::create([
+                'nomor_invoice' => $nomorInvoice,
                 'booking_id' => $data['booking_id'],
+                'contract_id' => $contract?->id,
                 'periode' => $data['periode'],
-                'jumlah' => $data['jumlah'],
+                'jumlah' => $totalNominal,
+                'denda' => 0,
                 'tanggal_terbit' => $data['tanggal_terbit'],
                 'tanggal_jatuh_tempo' => $data['tanggal_jatuh_tempo'],
                 'status' => 'belum_dibayar',
                 'keterangan' => $data['keterangan'] ?? null,
             ]);
+
+            if (!empty($itemsInput)) {
+                foreach ($itemsInput as $item) {
+                    if ((int) ($item['nominal'] ?? 0) <= 0) {
+                        continue;
+                    }
+                    InvoiceItem::create([
+                        'tagihan_id' => $tagihan->id,
+                        'nama_item' => $item['nama_item'],
+                        'jenis' => $item['jenis'] ?? 'lainnya',
+                        'nominal' => (int) $item['nominal'],
+                        'keterangan' => $item['keterangan'] ?? null,
+                    ]);
+                }
+            } else {
+                // Default 1 item utama jika form hanya mengisi nominal tunggal
+                InvoiceItem::create([
+                    'tagihan_id' => $tagihan->id,
+                    'nama_item' => "Sewa Kamar {$booking->kamar?->nomor_kamar} ({$data['periode']})",
+                    'jenis' => 'sewa_pokok',
+                    'nominal' => $totalNominal,
+                ]);
+            }
         });
 
         return redirect()->route('admin.tagihan.index')->with('success', 'Tagihan berhasil ditambahkan.');
@@ -178,6 +240,7 @@ class TagihanController extends Controller
         }
 
         $tagihan->update($data);
+        $this->kosService->hitungUlangSaldoTagihan($tagihan);
 
         return redirect()->route('admin.tagihan.index')->with('success', 'Tagihan berhasil diperbarui.');
     }
@@ -205,6 +268,11 @@ class TagihanController extends Controller
             'tanggal_terbit' => ['required', 'date_format:Y-m-d'],
             'tanggal_jatuh_tempo' => ['required', 'date_format:Y-m-d'],
             'keterangan' => ['nullable', 'string', 'max:1000'],
+            'items' => ['nullable', 'array'],
+            'items.*.nama_item' => ['required_with:items', 'string', 'max:100'],
+            'items.*.jenis' => ['nullable', 'string', 'max:30'],
+            'items.*.nominal' => ['required_with:items', 'integer', 'min:0'],
+            'items.*.keterangan' => ['nullable', 'string', 'max:255'],
         ], [
             'booking_id.required' => 'Pilih penghuni terlebih dahulu.',
             'booking_id.exists' => 'Data booking penghuni tidak ditemukan.',

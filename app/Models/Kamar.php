@@ -69,5 +69,16 @@ class Kamar extends Model
     {
         return $this->hasMany(Booking::class);
     }
+
+
+    public function facilities(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Facility::class, 'facility_kamar');
+    }
+
+    public function contracts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Contract::class);
+    }
     
 }

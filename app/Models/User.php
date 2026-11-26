@@ -86,4 +86,14 @@ class User extends Authenticatable
             'diverifikasi_oleh'
         );
     }
+
+        public function tenantProfile(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(TenantProfile::class);
+    }
+
+    public function contracts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Contract::class);
+    }
 }

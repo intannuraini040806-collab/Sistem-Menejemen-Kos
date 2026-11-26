@@ -19,6 +19,8 @@ use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\TagihanController as AdminTagihanController;
 use App\Http\Controllers\Admin\PetugasController;
 use App\Http\Controllers\Admin\LaporanController;
+use App\Http\Controllers\Admin\FacilityController;
+use App\Http\Controllers\Admin\AnnouncementController;
 
 // ==========================================
 // CONTROLLER PETUGAS / PENGHUNI
@@ -50,25 +52,20 @@ Route::get('/kamar/{id}', function ($id) {
 // AUTENTIKASI KOSHAVEN
 // ==========================================
 
-// Menampilkan halaman login.
 Route::get('/login', [AuthController::class, 'showLogin'])
     ->name('login');
 
-// Memproses login.
 Route::post('/login', [AuthController::class, 'login'])
     ->middleware('throttle:5,1')
     ->name('login.authenticate');
 
-// Menampilkan halaman registrasi.
 Route::get('/register', [AuthController::class, 'showRegister'])
     ->name('register');
 
-// Memproses registrasi penghuni.
 Route::post('/register', [AuthController::class, 'register'])
     ->middleware('throttle:3,1')
     ->name('register.store');
 
-// Memproses logout.
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
@@ -109,7 +106,20 @@ Route::middleware(['auth', 'role:admin'])
 
 
         // ======================================
-        // BOOKING KOS ADMIN
+        // MASTER FASILITAS & PENGUMUMAN ADMIN
+        // ======================================
+
+        Route::resource('fasilitas', FacilityController::class)
+            ->parameters(['fasilitas' => 'facility'])
+            ->except(['create', 'edit', 'show']);
+
+        Route::resource('pengumuman', AnnouncementController::class)
+            ->parameters(['pengumuman' => 'announcement'])
+            ->except(['create', 'edit', 'show']);
+
+
+        // ======================================
+        // BOOKING KOS & CHECK-OUT ADMIN
         // ======================================
 
         Route::get('/booking', [BookingController::class, 'index'])
@@ -126,6 +136,9 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::patch('/booking/{booking}/tolak', [BookingController::class, 'reject'])
             ->name('booking.reject');
+
+        Route::patch('/booking/{booking}/checkout', [BookingController::class, 'checkout'])
+            ->name('booking.checkout');
 
         Route::delete('/booking/{booking}', [BookingController::class, 'destroy'])
             ->name('booking.destroy');
@@ -241,43 +254,30 @@ Route::middleware(['auth', 'role:petugas'])
     ->name('petugas.')
     ->group(function () {
 
-        // DASHBOARD PETUGAS
         Route::get('/dashboard', function () {
             return view('petugas.dashboard');
         })->name('dashboard');
 
-
-        // DATA KAMAR
         Route::get('/kamar', function () {
             return view('petugas.kamar');
         })->name('kamar.index');
 
-
-        // DATA PENGHUNI
         Route::get('/penghuni', function () {
             return view('petugas.penghuni');
         })->name('penghuni.index');
 
-
-        // DATA TAGIHAN
         Route::get('/tagihan', function () {
             return view('petugas.tagihan');
         })->name('tagihan.index');
 
-
-        // DATA PEMBAYARAN
         Route::get('/pembayaran', function () {
             return view('petugas.pembayaran');
         })->name('pembayaran.index');
 
-
-        // AKTIVITAS PETUGAS
         Route::get('/aktivitas', function () {
             return view('petugas.aktivitas');
         })->name('aktivitas.index');
 
-
-        // PROFIL PETUGAS
         Route::get('/profil', function () {
             return view('petugas.profil');
         })->name('profil.index');
@@ -294,14 +294,8 @@ Route::middleware(['auth', 'role:penghuni'])
     ->name('penghuni.')
     ->group(function () {
 
-        // DASHBOARD PENGHUNI
         Route::get('/dashboard', [DashboardController::class, 'index'])
             ->name('dashboard');
-
-
-        // ======================================
-        // KAMAR SAYA
-        // ======================================
 
         Route::get('/kamar', [PenghuniKamarController::class, 'index'])
             ->name('kamar.index');
@@ -310,36 +304,16 @@ Route::middleware(['auth', 'role:penghuni'])
             ->middleware('throttle:5,1')
             ->name('kamar.booking.store');
 
-
-        // ======================================
-        // TAGIHAN BULANAN PENGHUNI
-        // ======================================
-
         Route::get('/tagihan', [PenghuniTagihanController::class, 'index'])
             ->name('tagihan.index');
-
-
-        // ======================================
-        // RIWAYAT PEMBAYARAN
-        // ======================================
 
         Route::get('/riwayat-pembayaran', function () {
             return view('penghuni.riwayat');
         })->name('riwayat.index');
 
-
-        // ======================================
-        // FASILITAS KOS
-        // ======================================
-
         Route::get('/fasilitas', function () {
             return view('penghuni.fasilitas');
         })->name('fasilitas.index');
-
-
-        // ======================================
-        // PROFIL PENGHUNI
-        // ======================================
 
         Route::get('/profil', function () {
             return view('penghuni.profil');

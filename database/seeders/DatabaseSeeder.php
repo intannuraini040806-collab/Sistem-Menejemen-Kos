@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
             BookingSeeder::class,
             TagihanSeeder::class,
             PembayaranSeeder::class,
+            MasterKonsepSeeder::class,
         ]);
     }
 }
