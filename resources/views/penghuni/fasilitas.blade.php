@@ -1443,7 +1443,6 @@
 
         <div>
             <div class="brand-name">KosHaven.</div>
-            <span class="brand-subtitle">BOARDING HOUSE MANAGEMENT</span>
         </div>
     </div>
 
@@ -1502,7 +1501,7 @@
 
             <div>
                 <strong>{{ $namaPenghuni }}</strong>
-                <span>Penghuni Kos</span>
+                <span>Penghuni KosHaven</span>
             </div>
         </div>
 

@@ -3,18 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Booking;
+use App\Http\Requests\Pembayaran\TolakPembayaranRequest;
 use App\Models\Pembayaran;
-use App\Models\Tagihan;
-use App\Services\KosBusinessService;
+use App\Services\PembayaranService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class PembayaranController extends Controller
 {
     public function __construct(
-        protected KosBusinessService $kosService
+        protected PembayaranService $pembayaranService
     ) {}
 
     /**
@@ -105,171 +102,32 @@ class PembayaranController extends Controller
     /**
      * Memverifikasi pembayaran penghuni (mendukung DP Booking maupun Cicilan Tagihan).
      */
-    public function verifikasi(Pembayaran $pembayaran)
+    public function verifikasi(Request $request, Pembayaran $pembayaran)
     {
-        $hasil = DB::transaction(function () use ($pembayaran) {
-            $dataPembayaran = Pembayaran::whereKey($pembayaran->id)
-                ->lockForUpdate()
-                ->firstOrFail();
+        $hasil = $this->pembayaranService->verifikasiPembayaran($pembayaran, $request->user());
 
-            if ($dataPembayaran->status !== 'menunggu_verifikasi') {
-                return [
-                    'berhasil' => false,
-                    'pesan' => 'Pembayaran ini sudah pernah diproses.',
-                ];
-            }
-
-            // Kasus 1: Pembayaran DP Booking
-            if ($dataPembayaran->jenis_pembayaran === 'dp_booking') {
-                $booking = Booking::whereKey($dataPembayaran->booking_id)
-                    ->lockForUpdate()
-                    ->first();
-
-                if (!$booking) {
-                    return [
-                        'berhasil' => false,
-                        'pesan' => 'Data booking terkait tidak ditemukan.',
-                    ];
-                }
-
-                if ((int) $dataPembayaran->jumlah_bayar < (int) $booking->nominal_dp) {
-                    return [
-                        'berhasil' => false,
-                        'pesan' => 'Nominal transfer DP kurang dari ketentuan minimum DP.',
-                    ];
-                }
-
-                $dataPembayaran->update([
-                    'status' => 'disetujui',
-                    'diverifikasi_oleh' => Auth::id(),
-                    'tanggal_verifikasi' => now(),
-                    'catatan' => 'Pembayaran DP booking berhasil diverifikasi oleh admin.',
-                ]);
-
-                return [
-                    'berhasil' => true,
-                    'pesan' => 'Pembayaran DP booking berhasil diverifikasi. Silakan setujui booking untuk check-in penghuni.',
-                ];
-            }
-
-            // Kasus 2: Pembayaran Tagihan (mendukung cicilan bertahap maupun pelunasan penuh)
-            $tagihan = Tagihan::whereKey($dataPembayaran->tagihan_id)
-                ->lockForUpdate()
-                ->first();
-
-            if (!$tagihan) {
-                return [
-                    'berhasil' => false,
-                    'pesan' => 'Tagihan yang terkait tidak ditemukan.',
-                ];
-            }
-
-            if ($tagihan->status === 'lunas') {
-                return [
-                    'berhasil' => false,
-                    'pesan' => 'Tagihan ini sudah berstatus lunas.',
-                ];
-            }
-
-            $sisaTagihan = $tagihan->sisa_tagihan;
-
-            if ((int) $dataPembayaran->jumlah_bayar <= 0) {
-                return [
-                    'berhasil' => false,
-                    'pesan' => 'Nominal pembayaran harus lebih dari 0.',
-                ];
-            }
-
-            if ((int) $dataPembayaran->jumlah_bayar > $sisaTagihan) {
-                return [
-                    'berhasil' => false,
-                    'pesan' => 'Nominal pembayaran melebihi sisa tagihan yang harus dibayar.',
-                ];
-            }
-
-            $dataPembayaran->update([
-                'status' => 'disetujui',
-                'diverifikasi_oleh' => Auth::id(),
-                'tanggal_verifikasi' => now(),
-                'catatan' => 'Pembayaran berhasil diverifikasi oleh admin.',
-            ]);
-
-            $tagihanTerbaru = $this->kosService->hitungUlangSaldoTagihan($tagihan);
-
-            $pesanStatus = $tagihanTerbaru->status === 'lunas'
-                ? 'Pembayaran berhasil diverifikasi dan tagihan telah lunas.'
-                : 'Cicilan pembayaran berhasil diverifikasi. Status tagihan diperbarui menjadi dibayar sebagian.';
-
-            return [
-                'berhasil' => true,
-                'pesan' => $pesanStatus,
-            ];
-        }, 3);
-
-        if (!$hasil['berhasil']) {
-            return back()->with('error', $hasil['pesan']);
+        if (! $hasil['ok']) {
+            return back()->with('error', $hasil['message']);
         }
 
-        return back()->with('success', $hasil['pesan']);
+        return back()->with('success', $hasil['message']);
     }
 
     /**
      * Menolak pembayaran penghuni dan menghitung ulang saldo tagihan.
      */
-    public function tolak(Request $request, Pembayaran $pembayaran)
+    public function tolak(TolakPembayaranRequest $request, Pembayaran $pembayaran)
     {
-        $validated = $request->validate([
-            'catatan' => [
-                'required',
-                'string',
-                'min:5',
-                'max:1000',
-            ],
-        ], [
-            'catatan.required' => 'Alasan penolakan wajib diisi.',
-            'catatan.min' => 'Alasan penolakan minimal 5 karakter.',
-            'catatan.max' => 'Alasan penolakan maksimal 1000 karakter.',
-        ]);
+        $hasil = $this->pembayaranService->tolakPembayaran(
+            $pembayaran,
+            $request->user(),
+            $request->validated('catatan')
+        );
 
-        $hasil = DB::transaction(function () use ($pembayaran, $validated) {
-            $dataPembayaran = Pembayaran::whereKey($pembayaran->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if ($dataPembayaran->status !== 'menunggu_verifikasi') {
-                return [
-                    'berhasil' => false,
-                    'pesan' => 'Pembayaran ini sudah pernah diproses.',
-                ];
-            }
-
-            $dataPembayaran->update([
-                'status' => 'ditolak',
-                'diverifikasi_oleh' => Auth::id(),
-                'tanggal_verifikasi' => now(),
-                'catatan' => trim($validated['catatan']),
-            ]);
-
-            if ($dataPembayaran->tagihan_id) {
-                $tagihan = Tagihan::whereKey($dataPembayaran->tagihan_id)
-                    ->lockForUpdate()
-                    ->first();
-
-                if ($tagihan) {
-                    $this->kosService->hitungUlangSaldoTagihan($tagihan);
-                }
-            }
-
-            return [
-                'berhasil' => true,
-                'pesan' => 'Pembayaran berhasil ditolak. Status tagihan telah diperbarui.',
-            ];
-        }, 3);
-
-        if (!$hasil['berhasil']) {
-            return back()->with('error', $hasil['pesan']);
+        if (! $hasil['ok']) {
+            return back()->with('error', $hasil['message']);
         }
 
-        return back()->with('success', $hasil['pesan']);
+        return back()->with('success', $hasil['message']);
     }
 }

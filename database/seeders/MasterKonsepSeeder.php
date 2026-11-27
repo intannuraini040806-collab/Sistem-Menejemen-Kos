@@ -20,8 +20,8 @@ class MasterKonsepSeeder extends Seeder
         $admin = User::updateOrCreate(
             ['email' => 'admin@kos.test'],
             [
-                'name' => 'Admin Pengelola Kos',
-                'phone' => '081234567890',
+                'name' => 'Admin KosHaven',
+                'phone' => '08815693992',
                 'password' => Hash::make('password123'),
                 'role' => 'admin',
             ]
@@ -30,7 +30,7 @@ class MasterKonsepSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'petugas@kos.test'],
             [
-                'name' => 'Petugas Operasional',
+                'name' => 'Petugas KosHaven',
                 'phone' => '081234567891',
                 'password' => Hash::make('password123'),
                 'role' => 'petugas',
@@ -137,13 +137,15 @@ class MasterKonsepSeeder extends Seeder
 
         // 4. Pengaturan Kos & Kebijakan Bisnis (DP, Tenggat, Denda, WA)
         $settings = [
-            'nama_kos' => 'Kos Harmoni Residence',
+            'nama_kos' => 'KosHaven - Hunian Nyaman',
+            'slogan_kos' => 'Hunian Nyaman, Hidup Lebih Tenang.',
             'alamat_kos' => 'Jl. Trunojoyo No. 45, Bangkalan, Jawa Timur',
-            'whatsapp_pengelola' => '6281234567890',
+            'whatsapp_pengelola' => '628815693992',
+            'email_kos' => 'info@koshaven.com',
             'dp_tipe' => 'persentase', // 'persentase' atau 'nominal'
             'dp_nilai' => '30', // 30% dari harga sewa
             'tenggat_dp_jam' => '24', // batas bayar DP 24 jam
-            'kebijakan_dp' => 'DP minimal 30% dibayarkan maksimal 24 jam setelah booking. Pembatalan sepihak oleh calon penghuni menyebabkan DP hangus 50%.',
+            'kebijakan_dp' => 'DP minimal 30% dibayarkan maksimal 24 jam setelah booking di KosHaven. Pembatalan sepihak oleh calon penghuni menyebabkan DP hangus 50%.',
             'nominal_deposit_default' => '500000',
             'masa_tenggang_hari' => '3', // 3 hari setelah jatuh tempo sebelum kena denda
             'denda_harian' => '25000', // Rp 25.000 per hari keterlambatan
@@ -153,31 +155,31 @@ class MasterKonsepSeeder extends Seeder
             Setting::setVal($key, $value);
         }
 
-        // 5. Rekening Bank Pembayaran Manual
-        BankAccount::firstOrCreate(
+        // 5. Rekening Bank Pembayaran Manual KosHaven
+        BankAccount::updateOrCreate(
             ['nomor_rekening' => '1234567890'],
             [
                 'nama_bank' => 'BCA',
-                'atas_nama' => 'Pengelola Kos Harmoni',
+                'atas_nama' => 'KosHaven - Hunian Nyaman',
                 'is_aktif' => true,
             ]
         );
 
-        BankAccount::firstOrCreate(
+        BankAccount::updateOrCreate(
             ['nomor_rekening' => '0987654321'],
             [
                 'nama_bank' => 'BRI',
-                'atas_nama' => 'Pengelola Kos Harmoni',
+                'atas_nama' => 'KosHaven - Hunian Nyaman',
                 'is_aktif' => true,
             ]
         );
 
         // 6. Pengumuman Awal
-        Announcement::firstOrCreate(
-            ['judul' => 'Selamat Datang di Sistem Manajemen Kos'],
+        Announcement::updateOrCreate(
+            ['judul' => 'Selamat Datang di KosHaven'],
             [
                 'dibuat_oleh' => $admin->id,
-                'isi' => 'Harap melakukan pembayaran tagihan bulanan sebelum tanggal jatuh tempo untuk menghindari denda keterlambatan.',
+                'isi' => 'Selamat datang di KosHaven — Hunian Nyaman, Hidup Lebih Tenang. Harap melakukan pembayaran tagihan bulanan sebelum tanggal jatuh tempo untuk menghindari denda keterlambatan.',
                 'is_aktif' => true,
             ]
         );

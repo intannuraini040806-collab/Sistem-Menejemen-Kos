@@ -15,6 +15,7 @@ class Booking extends Model
         'tanggal_booking',
         'tanggal_masuk',
         'tanggal_keluar',
+        'alasan_keluar',
         'nominal_dp',
         'tenggat_dp',
         'kebijakan_dp',
@@ -52,5 +53,10 @@ class Booking extends Model
     public function pembayarans(): HasMany
     {
         return $this->hasMany(Pembayaran::class);
+    }
+
+    public function tagihans(): HasMany
+    {
+        return $this->hasMany(Tagihan::class);
     }
 }

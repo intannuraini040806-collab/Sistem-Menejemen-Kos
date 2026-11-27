@@ -1043,9 +1043,11 @@
 
     @php
         $namaPenghuni = $user->name ?? 'Penghuni';
-        $inisial = \Illuminate\Support\Str::upper(
-            \Illuminate\Support\Str::substr($namaPenghuni, 0, 1)
-        );
+        $inisial = collect(preg_split('/\s+/', trim($namaPenghuni)))
+            ->filter()
+            ->take(2)
+            ->map(fn ($kata) => mb_strtoupper(mb_substr($kata, 0, 1)))
+            ->implode('') ?: 'P';
 
         $formatRupiah = function ($jumlah) {
             return 'Rp' . number_format((int) $jumlah, 0, ',', '.');
@@ -1115,7 +1117,6 @@
 
             <div>
                 <div class="brand-name">KosHaven.</div>
-                <span>BOARDING HOUSE MANAGEMENT</span>
             </div>
         </div>
 
@@ -1160,7 +1161,7 @@
 
                 <div>
                     <strong>{{ $namaPenghuni }}</strong>
-                    <small>Penghuni Kos</small>
+                    <small>Penghuni KosHaven</small>
                 </div>
             </div>
 

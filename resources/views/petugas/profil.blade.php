@@ -1315,27 +1315,30 @@
 (() => {
     'use strict';
 
-    const PROFILE_KEY = 'koshaven_petugas_profile_v1';
+    @php
+        $authUser = auth()->user();
+        $serverProfile = $profileData ?? [
+            'id' => $authUser?->id ?? 0,
+            'name' => $authUser?->name ?? 'Petugas KosHaven',
+            'email' => $authUser?->email ?? '',
+            'phone' => $authUser?->phone ?? '',
+        ];
+    @endphp
+    const serverProfile = @json($serverProfile);
+    const PROFILE_KEY = 'koshaven_petugas_profile_u_' + String(serverProfile.id || 0);
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "{{ csrf_token() }}";
+    const updateProfileUrl = "{{ route('petugas.profil.update') }}";
+    const updatePasswordUrl = "{{ route('petugas.profil.password') }}";
 
     const $ = selector => document.querySelector(selector);
 
     const defaultProfile = {
-        name: 'Petugas Kos',
-        email: 'petugas@koshaven.com',
-        phone: '081234567890',
+        name: serverProfile.name || 'Petugas KosHaven',
+        email: serverProfile.email || '',
+        phone: serverProfile.phone || '',
         address: '',
         photo: ''
     };
-
-    /*
-     * Password demo hanya disimpan di memori halaman,
-     * bukan di localStorage.
-     * Password awal demo: Petugas123
-     *
-     * Untuk penggunaan nyata, ubah password harus melalui
-     * autentikasi dan backend Laravel.
-     */
-    let demoPassword = 'Petugas123';
 
     let profile = loadProfile();
     let toastTimeout = null;
@@ -1347,28 +1350,14 @@
     function loadProfile() {
         try {
             const saved = localStorage.getItem(PROFILE_KEY);
-
-            if (!saved) {
-                localStorage.setItem(PROFILE_KEY, JSON.stringify(defaultProfile));
-                return cloneDefault();
-            }
-
-            const parsed = JSON.parse(saved);
-
-            if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-                throw new Error('Format profil tidak valid.');
-            }
+            const parsed = saved ? JSON.parse(saved) : {};
 
             return {
                 ...defaultProfile,
-                name: typeof parsed.name === 'string' ? parsed.name : defaultProfile.name,
-                email: typeof parsed.email === 'string' ? parsed.email : defaultProfile.email,
-                phone: typeof parsed.phone === 'string' ? parsed.phone : defaultProfile.phone,
-                address: typeof parsed.address === 'string' ? parsed.address : '',
-                photo: typeof parsed.photo === 'string' ? parsed.photo : ''
+                address: typeof parsed?.address === 'string' ? parsed.address : '',
+                photo: typeof parsed?.photo === 'string' ? parsed.photo : ''
             };
         } catch (error) {
-            console.error('Gagal membaca profil:', error);
             return cloneDefault();
         }
     }
@@ -1527,20 +1516,36 @@
             return;
         }
 
-        const previous = { ...profile };
+        fetch(updateProfileUrl, {
+            method: 'PUT',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ name, email, phone, address })
+        })
+        .then(async response => {
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                const firstErr = result.errors ? Object.values(result.errors).flat()[0] : null;
+                showToast(firstErr || result.message || 'Gagal memperbarui profil.', false);
+                return;
+            }
 
-        profile.name = name;
-        profile.email = email;
-        profile.phone = phone;
-        profile.address = address;
+            profile.name = result.profile?.name ?? name;
+            profile.email = result.profile?.email ?? email;
+            profile.phone = result.profile?.phone ?? phone;
+            profile.address = address;
 
-        if (!saveProfileData()) {
-            profile = previous;
-            return;
-        }
-
-        renderProfile();
-        showToast('Informasi profil berhasil diperbarui.');
+            saveProfileData();
+            renderProfile();
+            showToast(result.message || 'Informasi profil berhasil diperbarui.');
+        })
+        .catch(() => {
+            showToast('Terjadi gangguan jaringan saat menyimpan profil.', false);
+        });
     });
 
     // RESET FORM PROFIL
@@ -1641,9 +1646,6 @@
         if (!oldPassword) {
             setError('oldPassword', 'oldPasswordError', 'Password lama wajib diisi.');
             valid = false;
-        } else if (oldPassword !== demoPassword) {
-            setError('oldPassword', 'oldPasswordError', 'Password lama tidak sesuai.');
-            valid = false;
         }
 
         if (!newPassword) {
@@ -1673,16 +1675,43 @@
             return;
         }
 
-        demoPassword = newPassword;
+        fetch(updatePasswordUrl, {
+            method: 'PUT',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                current_password: oldPassword,
+                password: newPassword,
+                password_confirmation: confirmPassword
+            })
+        })
+        .then(async response => {
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                if (result.errors?.current_password) {
+                    setError('oldPassword', 'oldPasswordError', result.errors.current_password[0]);
+                }
+                const firstErr = result.errors ? Object.values(result.errors).flat()[0] : null;
+                showToast(firstErr || result.message || 'Gagal memperbarui password.', false);
+                return;
+            }
 
-        form.reset();
-        clearErrors(form);
+            form.reset();
+            clearErrors(form);
 
-        form.querySelectorAll('.toggle-password i').forEach(icon => {
-            icon.className = 'bi bi-eye';
+            form.querySelectorAll('.toggle-password i').forEach(icon => {
+                icon.className = 'bi bi-eye';
+            });
+
+            showToast(result.message || 'Password berhasil diperbarui.');
+        })
+        .catch(() => {
+            showToast('Terjadi gangguan jaringan saat mengubah password.', false);
         });
-
-        showToast('Password demo berhasil diperbarui.');
     });
 
     // RESET FORM PASSWORD

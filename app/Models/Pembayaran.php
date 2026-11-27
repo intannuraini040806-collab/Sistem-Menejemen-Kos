@@ -17,6 +17,8 @@ class Pembayaran extends Model
         'tanggal_pembayaran',
         'bukti_pembayaran',
         'referensi_gateway',
+        'nomor_kuitansi',
+        'tanggal_kuitansi',
         'status',
         'diverifikasi_oleh',
         'tanggal_verifikasi',
@@ -29,6 +31,7 @@ class Pembayaran extends Model
             'jumlah_bayar' => 'integer',
             'tanggal_pembayaran' => 'date',
             'tanggal_verifikasi' => 'datetime',
+            'tanggal_kuitansi' => 'datetime',
         ];
     }
 
@@ -55,5 +58,30 @@ class Pembayaran extends Model
     public function getJumlahBayarFormatAttribute(): string
     {
         return 'Rp ' . number_format($this->jumlah_bayar, 0, ',', '.');
+    }
+
+    /**
+     * Menerbitkan kuitansi resmi. Kuitansi hanya terbit untuk pembayaran yang
+     * sudah diverifikasi (disetujui) dan nomornya bersifat tetap (idempotent).
+     * Format: KWT-{TahunBulan}-{ID 5 digit}, contoh KWT-202611-00012.
+     */
+    public function terbitkanKuitansi(): ?string
+    {
+        if ($this->status !== 'disetujui') {
+            return null;
+        }
+
+        if ($this->nomor_kuitansi) {
+            return $this->nomor_kuitansi;
+        }
+
+        $tanggal = $this->tanggal_verifikasi ?? now();
+
+        $this->forceFill([
+            'nomor_kuitansi' => 'KWT-' . $tanggal->format('Ym') . '-' . str_pad((string) $this->id, 5, '0', STR_PAD_LEFT),
+            'tanggal_kuitansi' => $tanggal,
+        ])->save();
+
+        return $this->nomor_kuitansi;
     }
 }

@@ -117,9 +117,16 @@
             position: sticky;
             top: 0;
             z-index: 1200;
+            padding: 0;
             background: rgba(18,22,27,.96);
             border-bottom: 1px solid var(--border);
             backdrop-filter: blur(18px);
+            transition: background .3s ease, box-shadow .3s ease;
+        }
+
+        .navbar.is-scrolled {
+            background: rgba(14,18,23,.98);
+            box-shadow: 0 10px 30px rgba(0,0,0,.32);
         }
 
         .nav-container {
@@ -166,36 +173,79 @@
         }
 
         .nav-menu {
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 25px;
+            gap: 26px;
             margin: auto;
         }
 
         .nav-menu a {
             position: relative;
-            padding: 10px 0;
+            padding: 10px 2px;
             color: var(--muted);
             font-size: 13px;
             font-weight: 600;
             text-decoration: none;
-            transition: .2s;
+            transition: color .28s cubic-bezier(.22, 1, .36, 1), transform .24s cubic-bezier(.22, 1, .36, 1);
         }
 
-        .nav-menu a:hover,
-        .nav-menu a.active {
-            color: var(--gold-light);
-        }
-
-        .nav-menu a.active::after {
+        .nav-menu a::before {
             content: "";
             position: absolute;
             bottom: 2px;
             left: 0;
-            width: 18px;
+            width: 100%;
             height: 2px;
             border-radius: 5px;
+            background: rgba(224,196,155,.35);
+            transform: scaleX(0);
+            transform-origin: left center;
+            transition: transform .28s cubic-bezier(.22, 1, .36, 1), opacity .28s ease;
+            opacity: 0;
+        }
+
+        .nav-menu a:hover {
+            color: var(--gold-light);
+            transform: translateY(-1px);
+        }
+
+        .nav-menu a:not(.active):hover::before {
+            transform: scaleX(.65);
+            opacity: 1;
+        }
+
+        .nav-menu a.active {
+            color: var(--gold-light);
+        }
+
+        .nav-menu a:active {
+            transform: translateY(0) scale(.97);
+        }
+
+        .nav-indicator {
+            position: absolute;
+            bottom: 2px;
+            left: 0;
+            width: 22px;
+            height: 2.5px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--gold-light), var(--gold));
+            box-shadow: 0 0 10px rgba(198,164,119,.45);
+            pointer-events: none;
+            transition: transform .36s cubic-bezier(.22, 1, .36, 1), width .36s cubic-bezier(.22, 1, .36, 1), opacity .25s ease;
+            will-change: transform, width;
+        }
+
+        .nav-menu:not(.has-indicator) a.active::after {
+            content: "";
+            position: absolute;
+            bottom: 2px;
+            left: 0;
+            width: 22px;
+            height: 2.5px;
+            border-radius: 999px;
             background: var(--gold);
         }
 
@@ -216,17 +266,20 @@
             text-decoration: none;
             font-size: 12px;
             font-weight: 700;
-            transition: .2s;
+            transition: background .25s ease, color .25s ease, border-color .25s ease, transform .25s ease;
         }
 
         .btn-login {
+            background: rgba(255,255,255,.03);
             color: var(--ivory);
             border: 1px solid var(--border);
         }
 
         .btn-login:hover {
             background: var(--surface);
+            color: var(--gold-light);
             border-color: var(--gold);
+            transform: translateY(-2px);
         }
 
         .btn-register {
@@ -913,6 +966,101 @@
             font-size: 16px;
         }
 
+        /* FASILITAS KOSHAVEN */
+
+        .facility-section {
+            padding: 85px 0;
+            background: var(--bg-deep);
+            border-top: 1px solid var(--border);
+        }
+
+        .facility-header {
+            text-align: center;
+            max-width: 620px;
+            margin: 0 auto 46px;
+        }
+
+        .facility-header h2 {
+            margin-top: 13px;
+            color: var(--ivory);
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(28px, 3.8vw, 40px);
+            line-height: 1.25;
+            font-weight: 600;
+        }
+
+        .facility-header h2 span {
+            color: var(--gold-light);
+        }
+
+        .facility-header p {
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .facility-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .facility-card {
+            padding: 26px 24px;
+            border-radius: var(--radius);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+        }
+
+        .facility-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(198,164,119,.42);
+            box-shadow: var(--shadow);
+        }
+
+        .facility-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 13px;
+            background: rgba(198,164,119,.13);
+            border: 1px solid rgba(198,164,119,.24);
+            color: var(--gold-light);
+            display: grid;
+            place-items: center;
+            font-size: 21px;
+            flex-shrink: 0;
+        }
+
+        .facility-card h3 {
+            color: var(--ivory);
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .facility-card p {
+            color: var(--muted);
+            font-size: 12.5px;
+            line-height: 1.7;
+        }
+
+        @media (max-width: 960px) {
+            .facility-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .facility-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* STATISTIC */
 
         .statistic-section {
@@ -1544,13 +1692,16 @@
                 font-size: 13px;
             }
 
-            .nav-menu a.active::after {
+            .nav-menu a::before,
+            .nav-menu a.active::after,
+            .nav-indicator {
                 display: none;
             }
 
             .nav-menu a:hover,
             .nav-menu a.active {
                 background: var(--surface);
+                transform: translateX(4px);
             }
 
             .nav-actions {
@@ -1930,13 +2081,16 @@
                 font-size: 13px;
             }
 
-            .nav-menu a.active::after {
+            .nav-menu a::before,
+            .nav-menu a.active::after,
+            .nav-indicator {
                 display: none;
             }
 
             .nav-menu a:hover,
             .nav-menu a.active {
                 background: var(--surface);
+                transform: translateX(4px);
             }
 
             .nav-actions {
@@ -2052,12 +2206,9 @@
         }
 
         @media (prefers-reduced-motion: reduce) {
-            *,
-            *::before,
-            *::after {
+            *:not(.nav-indicator):not(.nav-menu a) {
                 scroll-behavior: auto !important;
                 animation-duration: .01ms !important;
-                transition-duration: .01ms !important;
             }
         }
     </style>
@@ -2066,7 +2217,7 @@
 <body>
 
     <!-- NAVBAR -->
-    <header class="navbar">
+    <header class="navbar" id="mainNavbar">
         <div class="container nav-container">
 
             <a href="{{ url('/') }}" class="logo">
@@ -2078,11 +2229,12 @@
 
             <div class="mobile-nav-panel" id="mobileNavPanel">
                 <nav class="nav-menu" id="primaryNavigation" aria-label="Navigasi utama">
-                    <a href="#home" class="active">Beranda</a>
-                    <a href="#kamar">Pilihan Kamar</a>
-                    <a href="#tentang">Tentang Kami</a>
-                    <a href="#fasilitas">Fasilitas</a>
-                    <a href="#peraturan-kos" id="openRulesButton">Peraturan Kos</a>
+                    <a href="#home" class="active" data-nav-target="home">Beranda</a>
+                    <a href="#kamar" data-nav-target="kamar">Pilihan Kamar</a>
+                    <a href="#fasilitas" data-nav-target="fasilitas">Fasilitas</a>
+                    <a href="#tentang" data-nav-target="tentang">Tentang Kami</a>
+                    <a href="#peraturan-kos" id="openRulesButton" data-nav-target="peraturan-kos">Peraturan Kos</a>
+                    <span class="nav-indicator" id="navIndicator" aria-hidden="true"></span>
                 </nav>
 
                 <div class="nav-actions">
@@ -2210,7 +2362,7 @@
     </section>
 
     <!-- BENEFIT -->
-    <section class="benefit-section" id="fasilitas">
+    <section class="benefit-section">
         <div class="container benefit-grid">
 
             <div class="benefit-item">
@@ -2421,6 +2573,75 @@
         </div>
     </section>
 
+    <!-- FASILITAS KOSHAVEN -->
+    <section class="facility-section" id="fasilitas">
+        <div class="container">
+
+            <div class="facility-header">
+                <span class="section-label">
+                    <i class="bi bi-stars"></i>
+                    FASILITAS HUNIAN
+                </span>
+                <h2>Fasilitas Lengkap <span>KosHaven</span></h2>
+                <p>
+                    Seluruh fasilitas dirancang untuk menunjang kenyamanan istirahat,
+                    produktivitas, dan keamanan penghuni setiap hari.
+                </p>
+            </div>
+
+            <div class="facility-grid">
+                <div class="facility-card">
+                    <div class="facility-card-icon"><i class="bi bi-wifi"></i></div>
+                    <div>
+                        <h3>Wi-Fi Berkecepatan Tinggi</h3>
+                        <p>Koneksi internet stabil 24 jam untuk mendukung kuliah, kerja jarak jauh, dan hiburan.</p>
+                    </div>
+                </div>
+
+                <div class="facility-card">
+                    <div class="facility-card-icon"><i class="bi bi-snow"></i></div>
+                    <div>
+                        <h3>AC &amp; Sirkulasi Nyaman</h3>
+                        <p>Kamar sejuk dengan pencahayaan alami dan ventilasi udara yang terawat.</p>
+                    </div>
+                </div>
+
+                <div class="facility-card">
+                    <div class="facility-card-icon"><i class="bi bi-droplet-half"></i></div>
+                    <div>
+                        <h3>Kamar Mandi Bersih</h3>
+                        <p>Tersedia pilihan kamar mandi dalam maupun bersama dengan air bersih lancar.</p>
+                    </div>
+                </div>
+
+                <div class="facility-card">
+                    <div class="facility-card-icon"><i class="bi bi-cup-hot"></i></div>
+                    <div>
+                        <h3>Dapur Bersama Lengkap</h3>
+                        <p>Area memasak dan penyimpanan rapi untuk menyiapkan makanan kapan saja.</p>
+                    </div>
+                </div>
+
+                <div class="facility-card">
+                    <div class="facility-card-icon"><i class="bi bi-camera-video"></i></div>
+                    <div>
+                        <h3>Parkir Luas &amp; CCTV 24 Jam</h3>
+                        <p>Lingkungan kos terpantau kamera keamanan dengan area parkir kendaraan yang aman.</p>
+                    </div>
+                </div>
+
+                <div class="facility-card">
+                    <div class="facility-card-icon"><i class="bi bi-basket"></i></div>
+                    <div>
+                        <h3>Area Cuci &amp; Laundry</h3>
+                        <p>Kemudahan fasilitas pencucian dan jemuran pakaian yang bersih serta praktis.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
     <!-- TENTANG KAMI -->
     <section class="about-section" id="tentang">
         <div class="container about-grid">
@@ -2456,7 +2677,7 @@
                 </p>
 
                 <p>
-                    Melalui Sistem Manajemen Kos, kami membantu calon
+                    Melalui Sistem Manajemen KosHaven, kami membantu calon
                     penghuni menemukan kamar yang sesuai serta memudahkan
                     pengelolaan informasi dan pembayaran kos.
                 </p>
@@ -2560,8 +2781,8 @@
                 <h4>Navigasi</h4>
                 <a href="#home">Beranda</a>
                 <a href="#kamar">Pilihan Kamar</a>
-                <a href="#tentang">Tentang Kami</a>
                 <a href="#fasilitas">Fasilitas</a>
+                <a href="#tentang">Tentang Kami</a>
                 <a href="#peraturan-kos" class="open-rules-link">Peraturan Kos</a>
             </div>
 
@@ -2907,11 +3128,172 @@
                 closeMenu();
             });
 
-            /* Klik navigasi */
-            navLinks.forEach(function (link) {
-                link.addEventListener('click', function () {
-                    closeMenu();
+            /* Klik navigasi + animasi pindah indikator & smooth scroll */
+            const primaryNav = document.getElementById('primaryNavigation');
+            const navIndicator = document.getElementById('navIndicator');
+            const mainNavbar = document.getElementById('mainNavbar');
+            let isProgrammaticScroll = false;
+            let scrollAnimationId = null;
+
+            function moveNavIndicator(activeLink) {
+                if (!primaryNav || !navIndicator || !activeLink || mobileBreakpoint.matches) {
+                    return;
+                }
+
+                primaryNav.classList.add('has-indicator');
+                const navRect = primaryNav.getBoundingClientRect();
+                const linkRect = activeLink.getBoundingClientRect();
+                const offsetX = linkRect.left - navRect.left;
+                const barWidth = Math.max(20, Math.round(linkRect.width * 0.55));
+
+                navIndicator.style.width = barWidth + 'px';
+                navIndicator.style.transform = 'translate3d(' + offsetX + 'px, 0, 0)';
+            }
+
+            function setActiveNavLink(targetLink) {
+                if (!targetLink) return;
+
+                navLinks.forEach(function (item) {
+                    const isMatch = item === targetLink;
+                    item.classList.toggle('active', isMatch);
+                    if (isMatch) {
+                        item.setAttribute('aria-current', 'page');
+                    } else {
+                        item.removeAttribute('aria-current');
+                    }
                 });
+
+                moveNavIndicator(targetLink);
+            }
+
+            function smoothScrollToElement(section) {
+                if (!section) return;
+
+                if (scrollAnimationId) {
+                    cancelAnimationFrame(scrollAnimationId);
+                }
+
+                const navHeight = (mainNavbar ? mainNavbar.offsetHeight : 82) + 8;
+                const startY = window.scrollY || window.pageYOffset;
+                const targetY = Math.max(
+                    0,
+                    section.getBoundingClientRect().top + startY - navHeight
+                );
+                const distance = targetY - startY;
+
+                if (Math.abs(distance) < 4) {
+                    isProgrammaticScroll = false;
+                    return;
+                }
+
+                const duration = Math.min(720, Math.max(420, Math.abs(distance) * 0.35));
+                const startTime = performance.now();
+                isProgrammaticScroll = true;
+
+                function easeInOutCubic(t) {
+                    return t < 0.5
+                        ? 4 * t * t * t
+                        : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                }
+
+                function step(now) {
+                    const elapsed = now - startTime;
+                    const progress = Math.min(1, elapsed / duration);
+                    const eased = easeInOutCubic(progress);
+
+                    window.scrollTo(0, startY + distance * eased);
+
+                    if (progress < 1) {
+                        scrollAnimationId = requestAnimationFrame(step);
+                    } else {
+                        scrollAnimationId = null;
+                        setTimeout(function () {
+                            isProgrammaticScroll = false;
+                        }, 60);
+                    }
+                }
+
+                scrollAnimationId = requestAnimationFrame(step);
+            }
+
+            function getActiveSectionLink() {
+                const triggerLine = Math.max(
+                    (mainNavbar ? mainNavbar.offsetHeight : 82) + 48,
+                    window.innerHeight * 0.35
+                );
+
+                const sections = ['home', 'kamar', 'fasilitas', 'tentang']
+                    .map(function (id) {
+                        const el = document.getElementById(id);
+                        return el ? { id: id, top: el.getBoundingClientRect().top } : null;
+                    })
+                    .filter(Boolean)
+                    .sort(function (a, b) {
+                        return a.top - b.top;
+                    });
+
+                let currentId = sections.length ? sections[0].id : 'home';
+
+                sections.forEach(function (sec) {
+                    if (sec.top <= triggerLine) {
+                        currentId = sec.id;
+                    }
+                });
+
+                // Jika sudah mendekati bagian paling bawah halaman, aktifkan seksi terakhir
+                const scrolledBottom = window.innerHeight + (window.scrollY || window.pageYOffset);
+                const docHeight = document.documentElement.scrollHeight;
+                if (sections.length && docHeight - scrolledBottom <= 40) {
+                    currentId = sections[sections.length - 1].id;
+                }
+
+                return primaryNav.querySelector('a[href="#' + currentId + '"]') || navLinks[0];
+            }
+
+            navLinks.forEach(function (link) {
+                link.addEventListener('click', function (event) {
+                    const href = this.getAttribute('href') || '';
+
+                    setActiveNavLink(this);
+                    closeMenu();
+
+                    if (href === '#peraturan-kos') {
+                        return;
+                    }
+
+                    if (href.startsWith('#') && href.length > 1) {
+                        const targetSection = document.querySelector(href);
+                        if (targetSection) {
+                            event.preventDefault();
+                            smoothScrollToElement(targetSection);
+                            if (history.replaceState) {
+                                history.replaceState(null, '', href);
+                            }
+                        }
+                    }
+                });
+            });
+
+            window.addEventListener('scroll', function () {
+                const y = window.scrollY || window.pageYOffset;
+                if (mainNavbar) {
+                    mainNavbar.classList.toggle('is-scrolled', y > 20);
+                }
+
+                if (isProgrammaticScroll || rulesModal.classList.contains('show')) {
+                    return;
+                }
+
+                setActiveNavLink(getActiveSectionLink());
+            }, { passive: true });
+
+            window.addEventListener('resize', function () {
+                const currentActive = primaryNav.querySelector('a.active') || navLinks[0];
+                moveNavIndicator(currentActive);
+            });
+
+            requestAnimationFrame(function () {
+                setActiveNavLink(getActiveSectionLink());
             });
 
             /* Klik Masuk atau Daftar */
@@ -2987,6 +3369,8 @@
                 rulesModal.classList.remove('show');
                 rulesModal.setAttribute('aria-hidden', 'true');
                 document.body.classList.remove('modal-open');
+
+                setActiveNavLink(getActiveSectionLink());
 
                 if (lastRulesTrigger && typeof lastRulesTrigger.focus === 'function') {
                     lastRulesTrigger.focus();

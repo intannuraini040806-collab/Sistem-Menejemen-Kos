@@ -103,21 +103,22 @@
             display: flex;
             align-items: center;
             gap: 11px;
-            padding: 0 12px 25px;
+            padding: 0 11px 24px;
             border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
         }
 
         .brand-icon {
-            width: 40px;
-            height: 40px;
+            width: 41px;
+            height: 41px;
             background: var(--primary-soft);
             color: var(--primary-light);
             border: 1px solid rgba(198,164,119,.2);
-            border-radius: 10px;
+            border-radius: 11px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 21px;
+            font-size: 20px;
             flex-shrink: 0;
         }
 
@@ -126,29 +127,32 @@
             font-size: 24px;
             font-weight: 700;
             color: var(--primary-light);
+            letter-spacing: -.5px;
         }
 
         .brand span {
             display: block;
-            font-size: 9px;
-            font-weight: 500;
-            letter-spacing: 1.5px;
-            color: var(--muted);
+            font-size: 8px;
+            font-weight: 600;
+            letter-spacing: 1.25px;
+            color: var(--muted-dark);
             margin-top: 4px;
         }
 
         .menu-label {
-            font-size: 10px;
+            font-size: 9px;
             color: var(--muted-dark);
             letter-spacing: 1.5px;
             padding: 25px 13px 12px;
             font-weight: 700;
+            flex-shrink: 0;
         }
 
         .menu {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 5px;
+            flex-shrink: 0;
         }
 
         .menu a {
@@ -156,16 +160,19 @@
             align-items: center;
             gap: 13px;
             padding: 12px 14px;
-            border-radius: 7px;
-            color: var(--muted);
-            font-size: 13px;
-            transition: .2s;
+            border-radius: 8px;
+            color: #AEB7C0;
+            font-size: 12px;
+            font-weight: 500;
+            transition: background .2s ease, color .2s ease, border-color .2s ease;
             border-left: 3px solid transparent;
         }
 
         .menu a i {
             font-size: 17px;
             width: 19px;
+            text-align: center;
+            flex-shrink: 0;
         }
 
         .menu a:hover,
@@ -178,38 +185,41 @@
         .sidebar-bottom {
             margin-top: auto;
             border-top: 1px solid var(--border);
-            padding-top: 18px;
+            padding-top: 16px;
+            flex-shrink: 0;
         }
 
         .user-info {
             display: flex;
             align-items: center;
             gap: 11px;
-            padding: 12px 8px;
+            padding: 11px 8px;
+            min-width: 0;
         }
 
         .user-avatar {
-            width: 38px;
-            height: 38px;
-            background: var(--primary-soft);
-            border: 1px solid rgba(198,164,119,.3);
-            color: var(--primary-light);
+            width: 39px;
+            height: 39px;
+            background: linear-gradient(135deg, #E0C49B, #A98B62);
+            color: #191D22;
             display: flex;
             justify-content: center;
             align-items: center;
             border-radius: 50%;
             font-weight: 700;
+            font-size: 14px;
             flex-shrink: 0;
+            text-transform: uppercase;
         }
 
         .user-info strong {
             display: block;
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text);
         }
 
         .user-info small {
-            color: var(--muted);
+            color: var(--muted-dark);
             font-size: 10px;
         }
 
@@ -1315,7 +1325,6 @@
 
             <div>
                 <div class="brand-name">KosHaven.</div>
-                <span>BOARDING HOUSE MANAGEMENT</span>
             </div>
         </div>
 
@@ -1358,18 +1367,21 @@
         <div class="sidebar-bottom">
 
             <div class="user-info">
-                <div class="user-avatar">A</div>
+                <div class="user-avatar">{{ $akunInfo['inisial'] ?? 'P' }}</div>
 
                 <div>
-                    <strong>Andi Pratama</strong>
-                    <small>Penghuni Kos</small>
+                    <strong>{{ $akunInfo['nama'] ?? auth()->user()?->name ?? 'Penghuni' }}</strong>
+                    <small>Penghuni KosHaven</small>
                 </div>
             </div>
 
-            <button class="logout" type="button" onclick="logoutDemo()">
-                <i class="bi bi-box-arrow-left"></i>
-                Keluar
-            </button>
+            <form action="{{ route('logout') }}" method="POST" onsubmit="return confirm('Apakah kamu yakin ingin keluar dari akun?')">
+                @csrf
+                <button class="logout" type="submit">
+                    <i class="bi bi-box-arrow-left"></i>
+                    Keluar
+                </button>
+            </form>
 
         </div>
 
@@ -1577,17 +1589,17 @@
 
                     <div class="summary-item">
                         <span>Nama Penghuni</span>
-                        <strong>Andi Pratama</strong>
+                        <strong>{{ $akunInfo['nama'] ?? auth()->user()?->name ?? 'Penghuni' }}</strong>
                     </div>
 
                     <div class="summary-item">
                         <span>Nomor Kamar</span>
-                        <strong>A-01</strong>
+                        <strong>{{ $akunInfo['nomor_kamar'] ?? 'Belum ada kamar' }}</strong>
                     </div>
 
                     <div class="summary-item">
                         <span>Biaya Sewa Bulanan</span>
-                        <strong>Rp1.200.000</strong>
+                        <strong>Rp {{ number_format((int) ($akunInfo['biaya_sewa'] ?? 0), 0, ',', '.') }}</strong>
                     </div>
 
                 </div>
@@ -1661,8 +1673,8 @@
                     id="printButton"
                     onclick="printReceipt()"
                 >
-                    <i class="bi bi-printer"></i>
-                    Cetak Bukti
+                    <i class="bi bi-receipt-cutoff"></i>
+                    Lihat Kuitansi
                 </button>
 
             </div>
@@ -1798,110 +1810,11 @@
         }
 
         /* ==========================================
-           LOCAL STORAGE
-           Menggunakan key yang sama dengan halaman
-           Tagihan Bulanan Penghuni.
+           DATA TRANSAKSI DARI BACKEND LARAVEL
         ========================================== */
 
-        const STORAGE_KEY = 'koshaven_penghuni_tagihan';
-
-        const initialBills = [
-            {
-                id: 1,
-                period: 'November 2026',
-                month: '2026-11',
-                amount: 1200000,
-                dueDate: '2026-11-30',
-                status: 'Belum Dibayar',
-                paymentMethod: '',
-                paymentDate: '',
-                proofName: '',
-                note: '',
-                rejectionReason: ''
-            },
-            {
-                id: 2,
-                period: 'Oktober 2026',
-                month: '2026-10',
-                amount: 1200000,
-                dueDate: '2026-10-30',
-                status: 'Lunas',
-                paymentMethod: 'Transfer Bank',
-                paymentDate: '2026-10-28',
-                proofName: '',
-                note: '',
-                rejectionReason: ''
-            },
-            {
-                id: 3,
-                period: 'September 2026',
-                month: '2026-09',
-                amount: 1200000,
-                dueDate: '2026-09-30',
-                status: 'Lunas',
-                paymentMethod: 'Tunai',
-                paymentDate: '2026-09-29',
-                proofName: '',
-                note: '',
-                rejectionReason: ''
-            },
-            {
-                id: 4,
-                period: 'Agustus 2026',
-                month: '2026-08',
-                amount: 1200000,
-                dueDate: '2026-08-30',
-                status: 'Lunas',
-                paymentMethod: 'Transfer Bank',
-                paymentDate: '2026-08-28',
-                proofName: '',
-                note: '',
-                rejectionReason: ''
-            }
-        ];
-
-        function getBills() {
-            try {
-                const stored = localStorage.getItem(STORAGE_KEY);
-
-                if (!stored) {
-                    localStorage.setItem(
-                        STORAGE_KEY,
-                        JSON.stringify(initialBills)
-                    );
-
-                    return initialBills.map(bill => ({ ...bill }));
-                }
-
-                const parsed = JSON.parse(stored);
-
-                if (!Array.isArray(parsed)) {
-                    throw new Error('Format data tidak valid.');
-                }
-
-                return parsed.filter(bill => {
-                    return bill &&
-                        typeof bill === 'object' &&
-                        bill.id !== undefined &&
-                        typeof bill.period === 'string' &&
-                        Number.isFinite(Number(bill.amount)) &&
-                        Number(bill.amount) >= 0 &&
-                        typeof bill.status === 'string';
-                });
-
-            } catch (error) {
-                console.error('Gagal membaca riwayat pembayaran:', error);
-
-                showToast(
-                    'Data tidak dapat dibaca',
-                    'Periksa penyimpanan browser atau muat ulang halaman.'
-                );
-
-                return initialBills.map(bill => ({ ...bill }));
-            }
-        }
-
-        let bills = getBills();
+        const akunInfo = @json($akunInfo ?? ['nama' => auth()->user()?->name ?? 'Penghuni', 'nomor_kamar' => 'Belum ada kamar', 'biaya_sewa' => 0]);
+        let bills = @json($transactions ?? []);
 
         /* ==========================================
            FORMAT DATA
@@ -2085,7 +1998,7 @@
                         <td>
                             <div class="transaction-period">
                                 <strong>${escapeHTML(bill.period)}</strong>
-                                <small>Kamar A-01</small>
+                                <small>Kamar ${escapeHTML(bill.room || akunInfo.nomor_kamar || '-')}</small>
                             </div>
                         </td>
 
@@ -2151,17 +2064,17 @@
             document.getElementById('receiptDetail').innerHTML = `
                 <div class="receipt-row">
                     <span>Nomor Transaksi</span>
-                    <strong>KH-${String(bill.id).padStart(5, '0')}</strong>
+                    <strong>${escapeHTML(bill.invoiceNumber || ('KH-' + String(bill.id).padStart(5, '0')))}</strong>
                 </div>
 
                 <div class="receipt-row">
                     <span>Nama Penghuni</span>
-                    <strong>Andi Pratama</strong>
+                    <strong>${escapeHTML(akunInfo.nama || 'Penghuni')}</strong>
                 </div>
 
                 <div class="receipt-row">
                     <span>Nomor Kamar</span>
-                    <strong>A-01</strong>
+                    <strong>${escapeHTML(bill.room || akunInfo.nomor_kamar || '-')}</strong>
                 </div>
 
                 <div class="receipt-row">
@@ -2181,13 +2094,29 @@
 
                 <div class="receipt-row">
                     <span>Bukti Pembayaran</span>
-                    <strong>${escapeHTML(bill.proofName || 'Tidak tersedia')}</strong>
+                    <strong>${bill.proofUrl
+                        ? `<a href="${escapeHTML(bill.proofUrl)}" target="_blank" rel="noopener noreferrer" style="color:var(--gold-light);text-decoration:underline;">Lihat Bukti <i class="bi bi-box-arrow-up-right"></i></a>`
+                        : 'Tidak tersedia'}</strong>
                 </div>
 
                 <div class="receipt-row">
                     <span>Status Transaksi</span>
                     <strong>${escapeHTML(bill.status)}</strong>
                 </div>
+
+                ${bill.receiptNumber ? `
+                    <div class="receipt-row">
+                        <span>Nomor Kuitansi</span>
+                        <strong>${escapeHTML(bill.receiptNumber)}</strong>
+                    </div>
+                ` : ''}
+
+                ${bill.verifikator ? `
+                    <div class="receipt-row">
+                        <span>Diverifikasi Oleh</span>
+                        <strong>${escapeHTML(bill.verifikator)}</strong>
+                    </div>
+                ` : ''}
 
                 ${bill.note ? `
                     <div class="receipt-row">
@@ -2275,19 +2204,19 @@
 
         function printReceipt() {
             if (!selectedTransaction) {
-                showToast('Gagal mencetak', 'Data transaksi tidak ditemukan.');
+                showToast('Gagal membuka kuitansi', 'Data transaksi tidak ditemukan.');
                 return;
             }
 
-            if (selectedTransaction.status !== 'Lunas') {
+            if (selectedTransaction.status !== 'Lunas' || !selectedTransaction.receiptUrl) {
                 showToast(
-                    'Belum dapat dicetak',
-                    'Bukti pembayaran hanya tersedia untuk transaksi lunas.'
+                    'Kuitansi belum tersedia',
+                    'Kuitansi terbit setelah pembayaran diverifikasi petugas.'
                 );
                 return;
             }
 
-            window.print();
+            window.open(selectedTransaction.receiptUrl, '_blank', 'noopener');
         }
 
         /* ==========================================

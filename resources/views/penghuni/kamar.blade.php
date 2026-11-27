@@ -148,40 +148,47 @@
             flex-shrink: 0;
             align-items: center;
             gap: 11px;
-            padding: 0 12px;
-            margin-bottom: 42px;
+            padding: 0 11px 24px;
+            border-bottom: 1px solid var(--border);
         }
 
         .brand-icon {
-            display: grid;
-            width: 42px;
-            height: 42px;
+            display: flex;
+            width: 41px;
+            height: 41px;
             flex-shrink: 0;
-            place-items: center;
-            border-radius: 13px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 11px;
             background: var(--primary-soft);
-            color: var(--primary);
-            font-size: 21px;
-            border: 1px solid rgba(198,164,119,.18);
+            color: var(--primary-light);
+            font-size: 20px;
+            border: 1px solid rgba(198,164,119,.2);
         }
 
         .brand-name {
-            color: var(--text);
+            color: var(--primary-light);
             font-family: 'Playfair Display', serif;
-            font-size: 23px;
+            font-size: 24px;
             font-weight: 700;
+            letter-spacing: -.5px;
         }
 
-        .brand-name span {
-            color: var(--primary);
+        .brand-subtitle {
+            display: block;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 8px;
+            font-weight: 600;
+            letter-spacing: 1.25px;
+            color: var(--muted-dark);
+            margin-top: 4px;
         }
 
         .nav-label {
             flex-shrink: 0;
-            padding: 0 13px;
-            margin-bottom: 13px;
+            padding: 25px 13px 12px;
             color: var(--muted-dark);
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 700;
             letter-spacing: 1.5px;
             text-transform: uppercase;
@@ -191,7 +198,7 @@
             display: flex;
             flex-shrink: 0;
             flex-direction: column;
-            gap: 7px;
+            gap: 5px;
         }
 
         .nav-menu a {
@@ -199,73 +206,70 @@
             flex-shrink: 0;
             align-items: center;
             gap: 13px;
-            padding: 13px 14px;
-            border-radius: 9px;
-            color: var(--muted);
-            font-size: 13px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            color: #AEB7C0;
+            font-size: 12px;
             font-weight: 500;
-            transition: background .18s ease, color .18s ease;
+            border-left: 3px solid transparent;
+            transition: background .2s ease, color .2s ease, border-color .2s ease;
         }
 
         .nav-menu a i {
             flex-shrink: 0;
-            color: var(--muted-dark);
+            width: 19px;
+            text-align: center;
             font-size: 17px;
         }
 
         .nav-menu a:hover,
         .nav-menu a.active {
-            background: var(--primary-soft);
+            background: rgba(198,164,119,.12);
             color: var(--primary-light);
-        }
-
-        .nav-menu a:hover i,
-        .nav-menu a.active i {
-            color: var(--primary);
-        }
-
-        .nav-menu a.active {
-            box-shadow: inset 3px 0 var(--primary);
+            border-left-color: var(--primary);
         }
 
         .sidebar-bottom {
             flex-shrink: 0;
             margin-top: auto;
-            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
         }
 
         .profile-mini {
             display: flex;
             align-items: center;
             gap: 11px;
-            padding: 15px 9px;
-            border-top: 1px solid var(--border);
+            padding: 11px 8px;
+            min-width: 0;
         }
 
         .avatar {
-            display: grid;
+            display: flex;
             width: 39px;
             height: 39px;
             flex-shrink: 0;
-            place-items: center;
+            align-items: center;
+            justify-content: center;
             border-radius: 50%;
-            background: var(--primary-soft);
-            border: 1px solid rgba(198,164,119,.25);
-            color: var(--primary);
-            font-weight: 800;
+            background: linear-gradient(135deg, #E0C49B, #A98B62);
+            color: #191D22;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
         }
 
         .profile-name {
             overflow: hidden;
             color: var(--text);
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
         .profile-role {
-            margin-top: 3px;
+            margin-top: 2px;
             color: var(--muted-dark);
             font-size: 10px;
         }
@@ -275,14 +279,15 @@
             width: 100%;
             align-items: center;
             gap: 12px;
-            padding: 12px 13px;
+            padding: 12px 14px;
             border: 0;
-            border-radius: 9px;
+            border-radius: 8px;
             background: transparent;
-            color: var(--muted);
-            font-size: 13px;
+            color: #AEB7C0;
+            font-size: 12px;
             text-align: left;
-            transition: background .18s ease, color .18s ease;
+            cursor: pointer;
+            transition: background .2s ease, color .2s ease;
         }
 
         .logout-btn:hover {
@@ -1499,10 +1504,12 @@
             <div class="brand-icon">
                 <i class="bi bi-house-heart-fill"></i>
             </div>
-            <div class="brand-name">Kos<span>Haven</span></div>
+            <div>
+                <div class="brand-name">KosHaven.</div>
+            </div>
         </div>
 
-        <div class="nav-label">Menu Utama</div>
+        <div class="nav-label">MENU PENGHUNI</div>
 
         <nav class="nav-menu">
             <a href="{{ route('penghuni.dashboard') }}">
@@ -1510,14 +1517,14 @@
                 Dashboard
             </a>
 
-            <a href="{{ route('penghuni.kamar.index') }}" class="active">
+            <a href="{{ route('penghuni.kamar.index') }}" class="active" aria-current="page">
                 <i class="bi bi-door-open"></i>
                 Kamar Saya
             </a>
 
             <a href="{{ route('penghuni.tagihan.index') }}">
                 <i class="bi bi-receipt"></i>
-                Tagihan
+                Tagihan Bulanan
             </a>
 
             <a href="{{ route('penghuni.riwayat.index') }}">
@@ -1526,12 +1533,12 @@
             </a>
 
             <a href="{{ route('penghuni.fasilitas.index') }}">
-                <i class="bi bi-stars"></i>
-                Fasilitas
+                <i class="bi bi-house-check"></i>
+                Fasilitas Kos
             </a>
 
             <a href="{{ route('penghuni.profil.index') }}">
-                <i class="bi bi-person"></i>
+                <i class="bi bi-person-circle"></i>
                 Profil Saya
             </a>
         </nav>
@@ -1545,7 +1552,7 @@
                 </div>
             </div>
 
-            <form action="{{ route('logout') }}" method="POST">
+            <form action="{{ route('logout') }}" method="POST" onsubmit="return confirm('Apakah kamu yakin ingin keluar dari dashboard?')">
                 @csrf
                 <button type="submit" class="logout-btn">
                     <i class="bi bi-box-arrow-left"></i>

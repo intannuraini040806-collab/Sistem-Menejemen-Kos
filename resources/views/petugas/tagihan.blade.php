@@ -893,24 +893,8 @@ tbody tr:hover {background:rgba(198,164,119,.035)}
 <script>
 'use strict';
 
-const BILL_KEY = 'koshaven_petugas_bills_v1';
-
-const initialBills = [
-    {id:1,name:'Andi Pratama',room:'A-01',period:'November 2026',month:'2026-11',amount:1200000,dueDate:'2026-11-05',status:'Lunas'},
-    {id:2,name:'Siti Rahma',room:'A-02',period:'November 2026',month:'2026-11',amount:1200000,dueDate:'2026-11-05',status:'Belum Dibayar'},
-    {id:3,name:'Budi Santoso',room:'A-04',period:'November 2026',month:'2026-11',amount:1500000,dueDate:'2026-11-05',status:'Terlambat'},
-    {id:4,name:'Dewi Lestari',room:'B-01',period:'November 2026',month:'2026-11',amount:1200000,dueDate:'2026-11-05',status:'Lunas'},
-    {id:5,name:'Rina Amelia',room:'B-03',period:'November 2026',month:'2026-11',amount:1200000,dueDate:'2026-11-05',status:'Belum Dibayar'},
-    {id:6,name:'Fajar Nugraha',room:'C-02',period:'November 2026',month:'2026-11',amount:1200000,dueDate:'2026-11-05',status:'Terlambat'},
-    {id:7,name:'Nadia Putri',room:'C-04',period:'November 2026',month:'2026-11',amount:1500000,dueDate:'2026-11-05',status:'Lunas'},
-    {id:8,name:'Rizky Maulana',room:'B-04',period:'November 2026',month:'2026-11',amount:1200000,dueDate:'2026-11-05',status:'Belum Dibayar'},
-    {id:9,name:'Andi Pratama',room:'A-01',period:'Oktober 2026',month:'2026-10',amount:1200000,dueDate:'2026-10-05',status:'Lunas'},
-    {id:10,name:'Siti Rahma',room:'A-02',period:'Oktober 2026',month:'2026-10',amount:1200000,dueDate:'2026-10-05',status:'Lunas'},
-    {id:11,name:'Budi Santoso',room:'A-04',period:'Oktober 2026',month:'2026-10',amount:1500000,dueDate:'2026-10-05',status:'Terlambat'},
-    {id:12,name:'Dewi Lestari',room:'B-01',period:'Oktober 2026',month:'2026-10',amount:1200000,dueDate:'2026-10-05',status:'Belum Dibayar'}
-];
-
-const allowedStatuses = ['Lunas','Belum Dibayar','Terlambat'];
+const bills = @json($bills ?? []);
+const allowedStatuses = ['Lunas','Menunggu Verifikasi','Dibayar Sebagian','Belum Dibayar','Terlambat'];
 
 function isValidDate(value) {
     if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -918,50 +902,6 @@ function isValidDate(value) {
     const date = new Date(value + 'T00:00:00');
     return !Number.isNaN(date.getTime()) && date.toISOString().slice(0,10) === value;
 }
-
-function isValidBill(bill) {
-    return bill &&
-        Number.isSafeInteger(Number(bill.id)) &&
-        Number(bill.id) > 0 &&
-        typeof bill.name === 'string' &&
-        bill.name.trim().length > 0 &&
-        typeof bill.room === 'string' &&
-        bill.room.trim().length > 0 &&
-        typeof bill.period === 'string' &&
-        bill.period.trim().length > 0 &&
-        /^\d{4}-(0[1-9]|1[0-2])$/.test(bill.month) &&
-        Number.isSafeInteger(Number(bill.amount)) &&
-        Number(bill.amount) > 0 &&
-        isValidDate(bill.dueDate) &&
-        allowedStatuses.includes(bill.status);
-}
-
-function loadBills() {
-    try {
-        const saved = localStorage.getItem(BILL_KEY);
-
-        if (!saved) return initialBills.map(item => ({...item}));
-
-        const parsed = JSON.parse(saved);
-
-        if (!Array.isArray(parsed)) {
-            throw new Error('Format data tagihan tidak valid.');
-        }
-
-        return parsed.filter(isValidBill).map(item => ({
-            ...item,
-            id:Number(item.id),
-            amount:Number(item.amount)
-        }));
-
-    } catch(error) {
-        console.error('Gagal membaca data tagihan:',error);
-        showToast('Data tersimpan tidak dapat dibaca. Menggunakan data contoh.');
-        return initialBills.map(item => ({...item}));
-    }
-}
-
-let bills = loadBills();
 
 function escapeHTML(value) {
     return String(value ?? '').replace(/[&<>"']/g, char => ({

@@ -1753,6 +1753,23 @@
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
 
+                                            @if($item->status === 'aktif')
+                                                <button
+                                                    type="button"
+                                                    class="action-btn checkout"
+                                                    style="background:rgba(198,164,119,.14);color:#E0C49B;border:1px solid rgba(198,164,119,.32);width:auto;padding:0 10px;gap:5px;font-size:11px;font-weight:600;"
+                                                    title="Check-out / Keluar Kos"
+                                                    aria-label="Check-out penghuni {{ $item->name }}"
+                                                    data-id="{{ $item->id }}"
+                                                    data-name="{{ $item->name }}"
+                                                    data-room="{{ $item->nomor_kamar }}"
+                                                    onclick="openCheckoutModal(this)"
+                                                >
+                                                    <i class="bi bi-box-arrow-right"></i>
+                                                    <span>Check-out</span>
+                                                </button>
+                                            @endif
+
                                             <form
                                                 action="{{ route('admin.penghuni.destroy', $item->id) }}"
                                                 method="POST"
@@ -2034,6 +2051,91 @@
 </div>
 
 
+<!-- MODAL CHECK-OUT / KELUAR KOS -->
+
+<div class="modal-overlay" id="checkoutModal">
+
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="checkoutModalTitle" style="max-width:480px;">
+
+        <form id="checkoutForm" method="POST" action="">
+            @csrf
+            @method('PATCH')
+
+            <div class="modal-header">
+                <div>
+                    <h3 id="checkoutModalTitle" style="font-family:'Playfair Display',serif;">Check-out / Keluar Kos</h3>
+                    <p id="checkoutModalSubtitle">Konfirmasi penghentian sewa dan pengembalian status kamar.</p>
+                </div>
+
+                <button
+                    type="button"
+                    class="modal-close"
+                    onclick="closeCheckoutModal()"
+                    aria-label="Tutup modal check-out"
+                >
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="room-note" style="margin-bottom:16px;background:rgba(198,164,119,.1);border-color:rgba(198,164,119,.28);color:#E0C49B;">
+                    <i class="bi bi-door-open"></i>
+                    <span>Penghuni: <strong id="checkoutResidentName">-</strong> (Kamar <strong id="checkoutResidentRoom">-</strong>). Pastikan seluruh tagihan telah lunas sebelum check-out.</span>
+                </div>
+
+                <div class="form-grid" style="grid-template-columns:1fr;">
+                    <div class="form-group">
+                        <label for="checkoutDate">Tanggal Keluar <span style="color:#D58F8F;">*</span></label>
+                        <input
+                            type="date"
+                            id="checkoutDate"
+                            name="tanggal_keluar"
+                            class="form-control"
+                            value="{{ now()->toDateString() }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="checkoutReason">Alasan Keluar (Opsional)</label>
+                        <textarea
+                            id="checkoutReason"
+                            name="alasan_keluar"
+                            class="form-control"
+                            rows="3"
+                            maxlength="500"
+                            style="height:auto;padding:10px 12px;resize:vertical;"
+                            placeholder="Contoh: Masa studi selesai, pindah kerja, atau alasan lainnya..."
+                        ></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button
+                    type="button"
+                    class="btn-secondary"
+                    onclick="closeCheckoutModal()"
+                >
+                    Batal
+                </button>
+
+                <button
+                    type="submit"
+                    class="btn-primary"
+                    id="checkoutSubmitBtn"
+                >
+                    <i class="bi bi-box-arrow-right"></i>
+                    Konfirmasi Check-out
+                </button>
+            </div>
+        </form>
+
+    </div>
+
+</div>
+
+
 <script>
     /* TANGGAL TOPBAR */
 
@@ -2103,6 +2205,43 @@
 
     const storeUrl = @json(route('admin.penghuni.store'));
     const updateUrl = @json(url('/admin/penghuni'));
+    const checkoutModal = document.getElementById('checkoutModal');
+    const checkoutForm = document.getElementById('checkoutForm');
+    const checkoutResidentName = document.getElementById('checkoutResidentName');
+    const checkoutResidentRoom = document.getElementById('checkoutResidentRoom');
+    const checkoutDateInput = document.getElementById('checkoutDate');
+    const checkoutReasonInput = document.getElementById('checkoutReason');
+
+    function openCheckoutModal(button) {
+        const id = button.dataset.id;
+        checkoutForm.action = updateUrl + '/' + encodeURIComponent(id) + '/checkout';
+        checkoutResidentName.textContent = button.dataset.name || '-';
+        checkoutResidentRoom.textContent = button.dataset.room || '-';
+        checkoutDateInput.value = @json(now()->toDateString());
+        checkoutReasonInput.value = '';
+        checkoutModal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => checkoutDateInput.focus(), 100);
+    }
+
+    function closeCheckoutModal() {
+        checkoutModal.classList.remove('show');
+        if (!modal.classList.contains('show') && !sidebar.classList.contains('open')) {
+            document.body.style.overflow = '';
+        }
+    }
+
+    checkoutModal.addEventListener('click', function(event) {
+        if (event.target === checkoutModal) {
+            closeCheckoutModal();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && checkoutModal.classList.contains('show')) {
+            closeCheckoutModal();
+        }
+    });
 
     function openAddModal() {
         residentForm.reset();

@@ -55,7 +55,7 @@
             overflow: hidden;
         }
 
-        button, input {
+        button, input, select {
             font: inherit;
         }
 
@@ -106,44 +106,48 @@
             display: flex;
             align-items: center;
             gap: 11px;
-            padding: 0 10px 30px;
+            padding: 0 11px 24px;
+            border-bottom: 1px solid var(--border);
             flex-shrink: 0;
         }
 
         .brand-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            background: var(--primary);
+            width: 41px;
+            height: 41px;
+            border-radius: 11px;
+            background: var(--primary-soft);
+            border: 1px solid rgba(198,164,119,.2);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #191D22;
-            font-size: 21px;
+            color: var(--primary-light);
+            font-size: 20px;
             flex-shrink: 0;
         }
 
         .brand-name {
             font-family: 'Playfair Display', serif;
-            font-size: 23px;
+            font-size: 24px;
             font-weight: 700;
-            color: var(--text);
+            color: var(--primary-light);
+            letter-spacing: -.5px;
         }
 
         .brand-subtitle {
-            font-size: 10px;
-            color: var(--muted);
-            letter-spacing: 1.5px;
-            margin-top: 2px;
+            display: block;
+            font-size: 8px;
+            font-weight: 600;
+            color: var(--muted-dark);
+            letter-spacing: 1.25px;
+            margin-top: 4px;
         }
 
         .nav-label {
-            font-size: 10px;
+            font-size: 9px;
             letter-spacing: 1.5px;
             color: var(--muted-dark);
             font-weight: 700;
-            padding: 0 12px;
-            margin: 12px 0 10px;
+            padding: 25px 13px 12px;
             flex-shrink: 0;
         }
 
@@ -158,32 +162,33 @@
             display: flex;
             align-items: center;
             gap: 13px;
-            padding: 12px 13px;
-            border-radius: 9px;
-            color: var(--muted);
-            font-size: 13px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            color: #AEB7C0;
+            font-size: 12px;
             font-weight: 500;
-            transition: background-color .15s ease, color .15s ease;
+            border-left: 3px solid transparent;
+            transition: background-color .15s ease, color .15s ease, border-color .15s ease;
         }
 
         .nav-link i {
             font-size: 17px;
+            width: 19px;
+            text-align: center;
+            flex-shrink: 0;
         }
 
         .nav-link:hover,
         .nav-link.active {
-            background: var(--primary-soft);
+            background: rgba(198,164,119,.12);
             color: var(--primary-light);
-        }
-
-        .nav-link.active {
-            border-left: 3px solid var(--primary);
-            padding-left: 10px;
+            border-left-color: var(--primary);
         }
 
         .sidebar-bottom {
             margin-top: auto;
-            padding-top: 25px;
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
             flex-shrink: 0;
         }
 
@@ -191,23 +196,24 @@
             display: flex;
             align-items: center;
             gap: 11px;
-            padding: 15px 8px;
-            border-top: 1px solid var(--border);
+            padding: 11px 8px;
             min-width: 0;
         }
 
         .avatar {
-            width: 38px;
-            height: 38px;
+            width: 39px;
+            height: 39px;
             border-radius: 50%;
-            background: var(--primary-soft);
-            color: var(--primary-light);
+            background: linear-gradient(135deg, #E0C49B, #A98B62);
+            color: #191D22;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
+            font-size: 14px;
             overflow: hidden;
             flex-shrink: 0;
+            text-transform: uppercase;
         }
 
         .avatar img,
@@ -224,7 +230,7 @@
 
         .profile-mini strong {
             display: block;
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text);
             overflow: hidden;
             text-overflow: ellipsis;
@@ -232,29 +238,29 @@
         }
 
         .profile-mini span {
-            color: var(--muted);
+            color: var(--muted-dark);
             font-size: 10px;
         }
 
         .logout {
             width: 100%;
-            border: 1px solid transparent;
-            background: rgba(213,143,143,.09);
-            color: var(--danger);
-            padding: 11px;
+            border: none;
+            background: transparent;
+            color: #AEB7C0;
+            padding: 12px 14px;
             border-radius: 8px;
             text-align: left;
             font-size: 12px;
-            transition: background-color .15s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: background-color .15s ease, color .15s ease;
         }
 
         .logout:hover {
-            background: rgba(213,143,143,.16);
-            border-color: rgba(213,143,143,.2);
-        }
-
-        .logout i {
-            margin-right: 9px;
+            background: rgba(213,143,143,.1);
+            color: var(--danger);
         }
 
         .overlay {
@@ -620,6 +626,23 @@
         .form-control:focus {
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(198,164,119,.12);
+        }
+
+        select.form-control {
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding-right: 34px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23A9B0B8' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 13px center;
+            background-size: 12px;
+        }
+
+        select.form-control option {
+            background: var(--surface-2);
+            color: var(--text);
         }
 
         .form-control:disabled {
@@ -1122,12 +1145,11 @@
             <i class="bi bi-house-heart-fill"></i>
         </div>
         <div>
-            <div class="brand-name">KosHaven</div>
-            <div class="brand-subtitle">BOARDING HOUSE</div>
+            <div class="brand-name">KosHaven.</div>
         </div>
     </div>
 
-    <div class="nav-label">MENU UTAMA</div>
+    <div class="nav-label">MENU PENGHUNI</div>
 
     <nav class="nav-menu">
         <a href="{{ route('penghuni.dashboard') }}" class="nav-link" data-page-transition>
@@ -1147,13 +1169,9 @@
         </a>
 
         <a href="{{ route('penghuni.fasilitas.index') }}" class="nav-link" data-page-transition>
-            <i class="bi bi-stars"></i> Fasilitas Kos
+            <i class="bi bi-house-check"></i> Fasilitas Kos
         </a>
-    </nav>
 
-    <div class="nav-label">AKUN</div>
-
-    <nav class="nav-menu">
         <a href="{{ route('penghuni.profil.index') }}" class="nav-link active" aria-current="page">
             <i class="bi bi-person-circle"></i> Profil Saya
         </a>
@@ -1161,13 +1179,16 @@
 
     <div class="sidebar-bottom">
         <div class="profile-mini">
-            <div class="avatar" id="sidebarAvatar">AP</div>
+            <div class="avatar" id="sidebarAvatar">{{ $profileData['initials'] ?? 'PG' }}</div>
             <div>
-                <strong id="sidebarName">Andi Pratama</strong>
-                <span>Penghuni Kos</span>
+                <strong id="sidebarName">{{ $profileData['name'] ?? auth()->user()?->name ?? 'Penghuni KosHaven' }}</strong>
+                <span>Penghuni KosHaven</span>
             </div>
         </div>
 
+        <form id="logoutForm" action="{{ route('logout') }}" method="POST" style="display:none;">
+            @csrf
+        </form>
         <button class="logout" type="button" onclick="logout()">
             <i class="bi bi-box-arrow-left"></i> Keluar
         </button>
@@ -1236,8 +1257,8 @@
                     >
                 </div>
 
-                <h2 id="displayName">Andi Pratama</h2>
-                <p class="profile-email" id="displayEmail">andi@email.com</p>
+                <h2 id="displayName">{{ $profileData['name'] ?? auth()->user()?->name ?? 'Penghuni KosHaven' }}</h2>
+                <p class="profile-email" id="displayEmail">{{ $profileData['email'] ?? auth()->user()?->email ?? '-' }}</p>
 
                 <div class="status-badge">
                     <i class="bi bi-check-circle-fill"></i>
@@ -1254,7 +1275,7 @@
                         </div>
                         <div>
                             <small>Nomor Kamar</small>
-                            <strong id="displayRoom">A-01</strong>
+                            <strong id="displayRoom">{{ $profileData['room'] ?? 'Belum ada kamar' }}</strong>
                         </div>
                     </div>
 
@@ -1359,13 +1380,14 @@
                             <div class="form-group">
                                 <label for="gender">Jenis Kelamin</label>
 
-                                <input
-                                    type="text"
+                                <select
                                     id="gender"
                                     class="form-control"
-                                    maxlength="20"
-                                    placeholder="Masukkan jenis kelamin"
                                 >
+                                    <option value="">Pilih jenis kelamin</option>
+                                    <option value="Laki-laki">Laki-laki</option>
+                                    <option value="Perempuan">Perempuan</option>
+                                </select>
 
                                 <small class="field-error" id="genderError"></small>
                             </div>
@@ -1392,7 +1414,7 @@
                                     type="text"
                                     id="room"
                                     class="form-control"
-                                    value="A-01"
+                                    value="{{ $profileData['room'] ?? 'Belum ada kamar' }}"
                                     disabled
                                 >
 
@@ -1406,7 +1428,7 @@
                                     type="text"
                                     id="joinDate"
                                     class="form-control"
-                                    value="Januari 2026"
+                                    value="{{ $profileData['joinDate'] ?? '-' }}"
                                     disabled
                                 >
                             </div>
@@ -1614,16 +1636,32 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-    const PROFILE_KEY = 'koshaven_penghuni_profil';
+    @php
+        $authUser = auth()->user();
+        $serverProfile = $profileData ?? [
+            'id' => $authUser?->id ?? 0,
+            'name' => $authUser?->name ?? 'Penghuni KosHaven',
+            'email' => $authUser?->email ?? '',
+            'phone' => $authUser?->phone ?? '',
+            'address' => $authUser?->tenantProfile?->alamat_asal ?? '',
+            'room' => 'Belum ada kamar',
+            'joinDate' => $authUser?->created_at?->locale('id')->translatedFormat('F Y') ?? '-',
+        ];
+    @endphp
+    const serverProfile = @json($serverProfile);
+    const PROFILE_KEY = 'koshaven_penghuni_profil_u_' + String(serverProfile.id || 0);
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const updateProfileUrl = "{{ route('penghuni.profil.update') }}";
+    const updatePasswordUrl = "{{ route('penghuni.profil.password') }}";
 
     const defaultProfile = {
-        name: 'Andi Pratama',
-        email: 'andi@email.com',
-        phone: '081234567890',
+        name: serverProfile.name || 'Penghuni KosHaven',
+        email: serverProfile.email || '',
+        phone: serverProfile.phone || '',
         gender: '',
-        address: '',
-        room: 'A-01',
-        joinDate: 'Januari 2026',
+        address: serverProfile.address || '',
+        room: serverProfile.room || 'Belum ada kamar',
+        joinDate: serverProfile.joinDate || '-',
         photo: ''
     };
 
@@ -1631,29 +1669,19 @@
     let selectedPhoto = profile.photo || '';
     let toastTimer = null;
 
-    // DATA PROFIL
+    // DATA PROFIL SESUAI SESI AKUN LOGIN
 
     function loadProfile() {
         try {
             const saved = localStorage.getItem(PROFILE_KEY);
-
-            if (!saved) {
-                return { ...defaultProfile };
-            }
-
-            const parsed = JSON.parse(saved);
-
-            if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-                return { ...defaultProfile };
-            }
+            const parsed = saved ? JSON.parse(saved) : {};
 
             return {
                 ...defaultProfile,
-                ...parsed
+                gender: typeof parsed?.gender === 'string' ? parsed.gender : '',
+                photo: typeof parsed?.photo === 'string' ? parsed.photo : ''
             };
-
         } catch (error) {
-            console.error('Gagal membaca data profil:', error);
             return { ...defaultProfile };
         }
     }
@@ -1811,8 +1839,8 @@
             valid = false;
         }
 
-        if (gender.length > 20) {
-            setError('gender', 'Jenis kelamin maksimal 20 karakter.');
+        if (!['', 'Laki-laki', 'Perempuan'].includes(gender)) {
+            setError('gender', 'Pilih jenis kelamin yang tersedia (Laki-laki atau Perempuan).');
             valid = false;
         }
 
@@ -1824,7 +1852,7 @@
         return valid;
     }
 
-    document.getElementById('profileForm').addEventListener('submit', function(event) {
+    document.getElementById('profileForm').addEventListener('submit', async function(event) {
         event.preventDefault();
 
         if (!validateProfile()) {
@@ -1832,19 +1860,48 @@
             return;
         }
 
-        const updatedProfile = {
-            ...profile,
+        const payload = {
             name: document.getElementById('fullName').value.trim(),
             email: document.getElementById('email').value.trim(),
             phone: document.getElementById('phone').value.trim(),
-            gender: document.getElementById('gender').value.trim(),
             address: document.getElementById('address').value.trim(),
-            photo: selectedPhoto
         };
 
-        if (saveProfile(updatedProfile)) {
-            showToast('Informasi profil berhasil diperbarui.');
+        try {
+            const response = await fetch(updateProfileUrl, {
+                method: 'PUT',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                const firstErr = result.errors ? Object.values(result.errors).flat()[0] : null;
+                showToast(firstErr || result.message || 'Gagal memperbarui profil.', true);
+                return;
+            }
+
+            const updatedProfile = {
+                ...profile,
+                name: result.profile?.name ?? payload.name,
+                email: result.profile?.email ?? payload.email,
+                phone: result.profile?.phone ?? payload.phone,
+                gender: document.getElementById('gender').value.trim(),
+                address: result.profile?.address ?? payload.address,
+                photo: selectedPhoto
+            };
+
+            saveProfile(updatedProfile);
+            showToast(result.message || 'Informasi profil berhasil diperbarui.');
             clearErrors(['name', 'email', 'phone', 'gender', 'address']);
+        } catch (error) {
+            showToast('Terjadi gangguan jaringan saat menyimpan profil.', true);
         }
     });
 
@@ -1995,27 +2052,44 @@
             return;
         }
 
-        /*
-         * DEMO FRONTEND:
-         * Password belum disimpan atau diubah.
-         * Perubahan password sebenarnya harus diproses
-         * melalui Laravel menggunakan Hash dan verifikasi
-         * password pengguna yang sedang login.
-         */
+        fetch(updatePasswordUrl, {
+            method: 'PUT',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                current_password: current,
+                password: newPassword,
+                password_confirmation: confirmation
+            })
+        })
+        .then(async response => {
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                if (result.errors?.current_password) {
+                    setError('currentPassword', result.errors.current_password[0]);
+                }
+                const firstErr = result.errors ? Object.values(result.errors).flat()[0] : null;
+                showToast(firstErr || result.message || 'Gagal memperbarui password.', true);
+                return;
+            }
 
-        showToast('Validasi berhasil. Fitur ubah password perlu dihubungkan ke Laravel.');
+            showToast(result.message || 'Password berhasil diperbarui.');
+            this.reset();
+            clearErrors(passwordFields);
 
-        this.reset();
-        clearErrors(passwordFields);
-
-        document.querySelectorAll('.toggle-password').forEach(button => {
-            const input = document.getElementById(button.dataset.target);
-
-            input.type = 'password';
-
-            button.querySelector('i').className = 'bi bi-eye';
-
-            button.setAttribute('aria-label', 'Tampilkan password');
+            document.querySelectorAll('.toggle-password').forEach(button => {
+                const input = document.getElementById(button.dataset.target);
+                input.type = 'password';
+                button.querySelector('i').className = 'bi bi-eye';
+                button.setAttribute('aria-label', 'Tampilkan password');
+            });
+        })
+        .catch(() => {
+            showToast('Terjadi gangguan jaringan saat mengubah password.', true);
         });
     });
 
@@ -2066,7 +2140,7 @@
     }
 
     function confirmLogout() {
-        window.location.href = "{{ route('login') }}";
+        document.getElementById('logoutForm').submit();
     }
 
     // SIDEBAR RESPONSIVE

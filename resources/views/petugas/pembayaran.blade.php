@@ -963,17 +963,20 @@
 
         <div class="sidebar-bottom">
             <div class="user-card">
-                <div class="avatar">PT</div>
+                <div class="avatar">{{ $petugasInfo['inisial'] ?? 'PT' }}</div>
                 <div class="user-info">
-                    <strong>Petugas Kos</strong>
+                    <strong>{{ $petugasInfo['nama'] ?? auth()->user()?->name ?? 'Petugas KosHaven' }}</strong>
                     <small>Staff Operasional</small>
                 </div>
             </div>
 
-            <button class="logout-btn" id="logoutBtn" type="button">
-                <i class="bi bi-box-arrow-left"></i>
-                Keluar dari akun
-            </button>
+            <form action="{{ route('logout') }}" method="POST" onsubmit="return confirm('Apakah kamu yakin ingin keluar dari akun?')">
+                @csrf
+                <button class="logout-btn" type="submit">
+                    <i class="bi bi-box-arrow-left"></i>
+                    Keluar dari akun
+                </button>
+            </form>
         </div>
     </aside>
 
@@ -1182,83 +1185,9 @@
         (() => {
             'use strict';
 
-            const STORAGE_KEY = 'koshaven_petugas_payments_v1';
-            const ACTIVITY_KEY = 'koshaven_petugas_activities_v1';
-
-            const initialPayments = [
-                {
-                    id: 'PAY-001',
-                    name: 'Andi Pratama',
-                    room: 'A-01',
-                    period: 'November 2026',
-                    amount: 1200000,
-                    date: '2026-11-23',
-                    method: 'Transfer Bank',
-                    reference: 'TRX-20261123-001',
-                    status: 'Menunggu',
-                    reason: ''
-                },
-                {
-                    id: 'PAY-002',
-                    name: 'Siti Rahma',
-                    room: 'A-02',
-                    period: 'November 2026',
-                    amount: 1200000,
-                    date: '2026-11-22',
-                    method: 'Transfer Bank',
-                    reference: 'TRX-20261122-002',
-                    status: 'Disetujui',
-                    reason: ''
-                },
-                {
-                    id: 'PAY-003',
-                    name: 'Budi Santoso',
-                    room: 'B-01',
-                    period: 'November 2026',
-                    amount: 1000000,
-                    date: '2026-11-21',
-                    method: 'Transfer Bank',
-                    reference: 'TRX-20261121-003',
-                    status: 'Menunggu',
-                    reason: ''
-                },
-                {
-                    id: 'PAY-004',
-                    name: 'Dewi Lestari',
-                    room: 'B-02',
-                    period: 'November 2026',
-                    amount: 1000000,
-                    date: '2026-11-20',
-                    method: 'Tunai',
-                    reference: 'TRX-20261120-004',
-                    status: 'Ditolak',
-                    reason: 'Bukti pembayaran tidak sesuai dengan jumlah tagihan.'
-                },
-                {
-                    id: 'PAY-005',
-                    name: 'Rizky Maulana',
-                    room: 'C-01',
-                    period: 'November 2026',
-                    amount: 1300000,
-                    date: '2026-11-19',
-                    method: 'Transfer Bank',
-                    reference: 'TRX-20261119-005',
-                    status: 'Disetujui',
-                    reason: ''
-                },
-                {
-                    id: 'PAY-006',
-                    name: 'Nadia Putri',
-                    room: 'C-02',
-                    period: 'November 2026',
-                    amount: 1300000,
-                    date: '2026-11-18',
-                    method: 'E-Wallet',
-                    reference: 'TRX-20261118-006',
-                    status: 'Menunggu',
-                    reason: ''
-                }
-            ];
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            const verifikasiUrlTemplate = "{{ route('petugas.pembayaran.verifikasi', ['pembayaran' => '__ID__']) }}";
+            const tolakUrlTemplate = "{{ route('petugas.pembayaran.tolak', ['pembayaran' => '__ID__']) }}";
 
             const $ = selector => document.querySelector(selector);
 
@@ -1268,63 +1197,9 @@
             const reasonInput = $('#rejectionReason');
             const reasonError = $('#reasonError');
 
-            const allowedStatuses = ['Menunggu', 'Disetujui', 'Ditolak'];
-
-            let payments = loadPayments();
+            let payments = @json($payments ?? []);
             let selectedPaymentId = null;
             let toastTimeout = null;
-
-            function cloneData(data) {
-                return JSON.parse(JSON.stringify(data));
-            }
-
-            function isValidPayment(payment) {
-                return payment &&
-                    typeof payment.id === 'string' &&
-                    typeof payment.name === 'string' &&
-                    typeof payment.room === 'string' &&
-                    typeof payment.period === 'string' &&
-                    Number.isFinite(Number(payment.amount)) &&
-                    Number(payment.amount) >= 0 &&
-                    typeof payment.date === 'string' &&
-                    typeof payment.method === 'string' &&
-                    typeof payment.reference === 'string' &&
-                    allowedStatuses.includes(payment.status) &&
-                    typeof payment.reason === 'string';
-            }
-
-            function loadPayments() {
-                try {
-                    const saved = localStorage.getItem(STORAGE_KEY);
-
-                    if (saved === null) {
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(initialPayments));
-                        return cloneData(initialPayments);
-                    }
-
-                    const parsed = JSON.parse(saved);
-
-                    if (!Array.isArray(parsed) || !parsed.every(isValidPayment)) {
-                        throw new Error('Format data pembayaran tidak valid.');
-                    }
-
-                    return parsed;
-                } catch (error) {
-                    console.error('Gagal membaca data pembayaran:', error);
-                    return cloneData(initialPayments);
-                }
-            }
-
-            function savePayments() {
-                try {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(payments));
-                    return true;
-                } catch (error) {
-                    console.error('Gagal menyimpan pembayaran:', error);
-                    showToast('Data gagal disimpan di browser.', false);
-                    return false;
-                }
-            }
 
             function escapeHTML(value) {
                 return String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -1473,7 +1348,7 @@
             }
 
             function openDetail(paymentId) {
-                const payment = payments.find(item => item.id === paymentId);
+                const payment = payments.find(item => String(item.id) === String(paymentId));
 
                 if (!payment) {
                     showToast('Data pembayaran tidak ditemukan.', false);
@@ -1495,16 +1370,56 @@
 
                 proofContainer.replaceChildren();
 
-                const proofIcon = document.createElement('i');
-                proofIcon.className = 'bi bi-image';
+                if (payment.proofUrl) {
+                    const isPdf = String(payment.proofName || '').toLowerCase().endsWith('.pdf');
+                    if (!isPdf) {
+                        const img = document.createElement('img');
+                        img.src = payment.proofUrl;
+                        img.alt = 'Bukti pembayaran';
+                        img.style.maxWidth = '100%';
+                        img.style.maxHeight = '260px';
+                        img.style.borderRadius = '10px';
+                        img.style.marginBottom = '10px';
+                        proofContainer.appendChild(img);
+                    } else {
+                        const pdfIcon = document.createElement('i');
+                        pdfIcon.className = 'bi bi-file-earmark-pdf';
+                        proofContainer.appendChild(pdfIcon);
+                    }
 
-                const proofTitle = document.createElement('strong');
-                proofTitle.textContent = 'Bukti pembayaran demo';
+                    const link = document.createElement('a');
+                    link.href = payment.proofUrl;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    link.className = 'action-btn';
+                    link.style.display = 'inline-flex';
+                    link.style.marginTop = '6px';
+                    link.innerHTML = '<i class="bi bi-box-arrow-up-right"></i> Buka Bukti Pembayaran';
+                    proofContainer.appendChild(link);
+                } else {
+                    const proofIcon = document.createElement('i');
+                    proofIcon.className = 'bi bi-image';
 
-                const proofDescription = document.createElement('span');
-                proofDescription.textContent = 'Belum ada file bukti asli yang terhubung.';
+                    const proofTitle = document.createElement('strong');
+                    proofTitle.textContent = 'Tidak ada file bukti pembayaran';
 
-                proofContainer.append(proofIcon, proofTitle, proofDescription);
+                    const proofDescription = document.createElement('span');
+                    proofDescription.textContent = 'Pembayaran ini tidak melampirkan file bukti (misalnya pembayaran tunai).';
+
+                    proofContainer.append(proofIcon, proofTitle, proofDescription);
+                }
+
+                if (payment.receiptUrl) {
+                    const receiptLink = document.createElement('a');
+                    receiptLink.href = payment.receiptUrl;
+                    receiptLink.target = '_blank';
+                    receiptLink.rel = 'noopener noreferrer';
+                    receiptLink.className = 'action-btn';
+                    receiptLink.style.display = 'inline-flex';
+                    receiptLink.style.marginTop = '8px';
+                    receiptLink.innerHTML = '<i class="bi bi-receipt-cutoff"></i> Lihat Kuitansi ' + (payment.receiptNumber || '');
+                    proofContainer.appendChild(receiptLink);
+                }
 
                 if (payment.reason) {
                     const reasonText = document.createElement('span');
@@ -1564,8 +1479,8 @@
                 }
             }
 
-            function approvePayment() {
-                const payment = payments.find(item => item.id === selectedPaymentId);
+            async function approvePayment() {
+                const payment = payments.find(item => String(item.id) === String(selectedPaymentId));
 
                 if (!payment || payment.status !== 'Menunggu') {
                     showToast('Pembayaran ini sudah diproses atau tidak ditemukan.', false);
@@ -1579,29 +1494,42 @@
 
                 if (!confirmed) return;
 
-                const oldStatus = payment.status;
-                const oldReason = payment.reason;
+                const approveBtn = $('#approveBtn');
+                approveBtn.disabled = true;
 
-                payment.status = 'Disetujui';
-                payment.reason = '';
+                try {
+                    const url = verifikasiUrlTemplate.replace('__ID__', encodeURIComponent(payment.id));
+                    const response = await fetch(url, {
+                        method: 'PATCH',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
 
-                if (!savePayments()) {
-                    payment.status = oldStatus;
-                    payment.reason = oldReason;
-                    return;
+                    const result = await response.json().catch(() => ({}));
+
+                    if (!response.ok) {
+                        showToast(result.message || 'Gagal menyetujui pembayaran.', false);
+                        return;
+                    }
+
+                    payment.status = result.status || 'Disetujui';
+                    payment.reason = '';
+
+                    closeDetail();
+                    renderAll();
+                    showToast(result.message || 'Pembayaran berhasil disetujui.');
+                } catch (error) {
+                    showToast('Terjadi gangguan jaringan saat menyetujui pembayaran.', false);
+                } finally {
+                    approveBtn.disabled = false;
                 }
-
-                addActivity(
-                    `Pembayaran ${payment.name} (${payment.room}) telah disetujui.`
-                );
-
-                closeDetail();
-                renderAll();
-                showToast('Pembayaran berhasil disetujui.');
             }
 
-            function rejectPayment() {
-                const payment = payments.find(item => item.id === selectedPaymentId);
+            async function rejectPayment() {
+                const payment = payments.find(item => String(item.id) === String(selectedPaymentId));
 
                 if (!payment || payment.status !== 'Menunggu') {
                     showToast('Pembayaran ini sudah diproses atau tidak ditemukan.', false);
@@ -1639,25 +1567,41 @@
 
                 if (!confirmed) return;
 
-                const oldStatus = payment.status;
-                const oldReason = payment.reason;
+                const rejectBtn = $('#rejectBtn');
+                rejectBtn.disabled = true;
 
-                payment.status = 'Ditolak';
-                payment.reason = reason;
+                try {
+                    const url = tolakUrlTemplate.replace('__ID__', encodeURIComponent(payment.id));
+                    const response = await fetch(url, {
+                        method: 'PATCH',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({ catatan: reason })
+                    });
 
-                if (!savePayments()) {
-                    payment.status = oldStatus;
-                    payment.reason = oldReason;
-                    return;
+                    const result = await response.json().catch(() => ({}));
+
+                    if (!response.ok) {
+                        const firstErr = result.errors ? Object.values(result.errors).flat()[0] : null;
+                        showToast(firstErr || result.message || 'Gagal menolak pembayaran.', false);
+                        return;
+                    }
+
+                    payment.status = result.status || 'Ditolak';
+                    payment.reason = result.reason || reason;
+
+                    closeDetail();
+                    renderAll();
+                    showToast(result.message || 'Pembayaran berhasil ditolak.');
+                } catch (error) {
+                    showToast('Terjadi gangguan jaringan saat menolak pembayaran.', false);
+                } finally {
+                    rejectBtn.disabled = false;
                 }
-
-                addActivity(
-                    `Pembayaran ${payment.name} (${payment.room}) ditolak. Alasan: ${reason}`
-                );
-
-                closeDetail();
-                renderAll();
-                showToast('Pembayaran berhasil ditolak.');
             }
 
             // Event daftar pembayaran
@@ -1737,13 +1681,6 @@
 
             window.addEventListener('resize', () => {
                 if (window.innerWidth > 768) closeSidebar();
-            });
-
-            // Logout demo: perilaku mengikuti kode sebelumnya
-            $('#logoutBtn').addEventListener('click', () => {
-                if (confirm('Apakah kamu yakin ingin keluar dari akun?')) {
-                    window.location.href = "{{ route('login') }}";
-                }
             });
 
             // Tanggal hari ini

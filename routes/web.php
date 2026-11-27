@@ -5,6 +5,9 @@ use Illuminate\Support\Facades\Schedule;
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\PembayaranBuktiController;
+use App\Http\Controllers\KuitansiController;
+use App\Http\Controllers\ProfileController;
 
 // ==========================================
 // CONTROLLER ADMIN
@@ -28,7 +31,10 @@ use App\Http\Controllers\Admin\AnnouncementController;
 
 use App\Http\Controllers\Penghuni\DashboardController;
 use App\Http\Controllers\Penghuni\KamarController as PenghuniKamarController;
+use App\Http\Controllers\Penghuni\RiwayatPembayaranController;
 use App\Http\Controllers\Penghuni\TagihanController as PenghuniTagihanController;
+use App\Http\Controllers\Petugas\PembayaranController as PetugasPembayaranController;
+use App\Http\Controllers\Petugas\TagihanController as PetugasTagihanController;
 
 
 // ==========================================
@@ -69,6 +75,14 @@ Route::post('/register', [AuthController::class, 'register'])
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
+
+Route::get('/pembayaran/{pembayaran}/bukti', PembayaranBuktiController::class)
+    ->middleware('auth')
+    ->name('pembayaran.bukti');
+
+Route::get('/kuitansi/{pembayaran}', [KuitansiController::class, 'show'])
+    ->middleware('auth')
+    ->name('kuitansi.show');
 
 
 // ==========================================
@@ -157,6 +171,9 @@ Route::middleware(['auth', 'role:admin'])
         Route::put('/penghuni/{id}', [PenghuniController::class, 'update'])
             ->name('penghuni.update');
 
+        Route::patch('/penghuni/{id}/checkout', [PenghuniController::class, 'checkout'])
+            ->name('penghuni.checkout');
+
         Route::delete('/penghuni/{id}', [PenghuniController::class, 'destroy'])
             ->name('penghuni.destroy');
 
@@ -238,9 +255,14 @@ Route::middleware(['auth', 'role:admin'])
         // PROFIL ADMIN
         // ======================================
 
-        Route::get('/profil', function () {
-            return view('admin.profil.index');
-        })->name('profil.index');
+        Route::get('/profil', [ProfileController::class, 'showAdmin'])
+            ->name('profil.index');
+
+        Route::put('/profil', [ProfileController::class, 'update'])
+            ->name('profil.update');
+
+        Route::put('/profil/password', [ProfileController::class, 'updatePassword'])
+            ->name('profil.password');
 
     });
 
@@ -266,21 +288,30 @@ Route::middleware(['auth', 'role:petugas'])
             return view('petugas.penghuni');
         })->name('penghuni.index');
 
-        Route::get('/tagihan', function () {
-            return view('petugas.tagihan');
-        })->name('tagihan.index');
+        Route::get('/tagihan', [PetugasTagihanController::class, 'index'])
+            ->name('tagihan.index');
 
-        Route::get('/pembayaran', function () {
-            return view('petugas.pembayaran');
-        })->name('pembayaran.index');
+        Route::get('/pembayaran', [PetugasPembayaranController::class, 'index'])
+            ->name('pembayaran.index');
+
+        Route::patch('/pembayaran/{pembayaran}/verifikasi', [PetugasPembayaranController::class, 'verifikasi'])
+            ->name('pembayaran.verifikasi');
+
+        Route::patch('/pembayaran/{pembayaran}/tolak', [PetugasPembayaranController::class, 'tolak'])
+            ->name('pembayaran.tolak');
 
         Route::get('/aktivitas', function () {
             return view('petugas.aktivitas');
         })->name('aktivitas.index');
 
-        Route::get('/profil', function () {
-            return view('petugas.profil');
-        })->name('profil.index');
+        Route::get('/profil', [ProfileController::class, 'showPetugas'])
+            ->name('profil.index');
+
+        Route::put('/profil', [ProfileController::class, 'update'])
+            ->name('profil.update');
+
+        Route::put('/profil/password', [ProfileController::class, 'updatePassword'])
+            ->name('profil.password');
 
     });
 
@@ -307,17 +338,25 @@ Route::middleware(['auth', 'role:penghuni'])
         Route::get('/tagihan', [PenghuniTagihanController::class, 'index'])
             ->name('tagihan.index');
 
-        Route::get('/riwayat-pembayaran', function () {
-            return view('penghuni.riwayat');
-        })->name('riwayat.index');
+        Route::post('/tagihan/{tagihan}/bayar', [PenghuniTagihanController::class, 'bayar'])
+            ->middleware('throttle:10,1')
+            ->name('tagihan.bayar');
+
+        Route::get('/riwayat-pembayaran', [RiwayatPembayaranController::class, 'index'])
+            ->name('riwayat.index');
 
         Route::get('/fasilitas', function () {
             return view('penghuni.fasilitas');
         })->name('fasilitas.index');
 
-        Route::get('/profil', function () {
-            return view('penghuni.profil');
-        })->name('profil.index');
+        Route::get('/profil', [ProfileController::class, 'showPenghuni'])
+            ->name('profil.index');
+
+        Route::put('/profil', [ProfileController::class, 'update'])
+            ->name('profil.update');
+
+        Route::put('/profil/password', [ProfileController::class, 'updatePassword'])
+            ->name('profil.password');
 
     });
 

@@ -78,122 +78,155 @@
         .brand {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 0 9px;
-            margin-bottom: 43px;
+            gap: 11px;
+            padding: 0 11px 24px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
         }
 
         .brand-icon {
-            width: 43px;
-            height: 43px;
-            display: grid;
-            place-items: center;
-            border-radius: 13px;
-            color: #191D22;
-            background: var(--primary);
-            font-size: 21px;
+            width: 41px;
+            height: 41px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 11px;
+            color: var(--primary-light);
+            background: var(--primary-soft);
+            border: 1px solid rgba(198,164,119,.2);
+            font-size: 20px;
+            flex-shrink: 0;
         }
 
         .brand-name {
             font-family: 'Playfair Display', serif;
-            font-size: 23px;
+            font-size: 24px;
             font-weight: 700;
+            color: var(--primary-light);
             letter-spacing: -.5px;
         }
 
-        .brand-name span {
-            color: var(--primary);
+        .brand-subtitle {
+            display: block;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 8px;
+            font-weight: 600;
+            letter-spacing: 1.25px;
+            color: var(--muted-dark);
+            margin-top: 4px;
         }
 
         .nav-label {
-            padding: 0 11px;
-            margin: 0 0 13px;
+            padding: 25px 13px 12px;
             color: var(--muted-dark);
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 700;
             letter-spacing: 1.5px;
             text-transform: uppercase;
+            flex-shrink: 0;
         }
 
         .nav-menu {
             display: flex;
             flex-direction: column;
-            gap: 7px;
+            gap: 5px;
+            flex-shrink: 0;
         }
 
         .nav-link {
             display: flex;
             align-items: center;
             gap: 13px;
-            padding: 12px 13px;
-            border-radius: 9px;
-            color: var(--muted);
-            font-size: 13px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            color: #AEB7C0;
+            font-size: 12px;
             font-weight: 500;
-            transition: .2s ease;
+            border-left: 3px solid transparent;
+            transition: background .2s ease, color .2s ease, border-color .2s ease;
         }
 
         .nav-link i {
             width: 19px;
             font-size: 17px;
+            text-align: center;
+            flex-shrink: 0;
         }
 
-        .nav-link:hover {
-            color: var(--text);
-            background: rgba(255,255,255,.045);
-        }
-
+        .nav-link:hover,
         .nav-link.active {
             color: var(--primary-light);
-            background: var(--primary-soft);
-            font-weight: 600;
-        }
-
-        .nav-link.active i {
-            color: var(--primary);
+            background: rgba(198,164,119,.12);
+            border-left-color: var(--primary);
         }
 
         .sidebar-bottom {
             margin-top: auto;
-            padding-top: 18px;
+            padding-top: 16px;
             border-top: 1px solid var(--border);
+            flex-shrink: 0;
         }
 
         .profile-mini {
             display: flex;
             align-items: center;
             gap: 11px;
-            padding: 12px 8px 3px;
-        }
-
-        .avatar {
-            width: 37px;
-            height: 37px;
-            flex-shrink: 0;
-            display: grid;
-            place-items: center;
-            border-radius: 50%;
-            color: var(--primary-light);
-            background: var(--surface-3);
-            font-weight: 700;
-        }
-
-        .profile-info {
+            padding: 11px 8px;
             min-width: 0;
         }
 
-        .profile-info strong {
+        .avatar {
+            width: 39px;
+            height: 39px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: #191D22;
+            background: linear-gradient(135deg, #E0C49B, #A98B62);
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .profile-mini > div:last-child {
+            min-width: 0;
+        }
+
+        .profile-mini strong {
             display: block;
             overflow: hidden;
             color: var(--text);
-            font-size: 12px;
+            font-size: 11px;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
-        .profile-info span {
+        .profile-mini span {
             color: var(--muted-dark);
-            font-size: 11px;
+            font-size: 10px;
+        }
+
+        .logout {
+            width: 100%;
+            border: none;
+            background: transparent;
+            color: #AEB7C0;
+            text-align: left;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            font-size: 12px;
+            border-radius: 8px;
+            transition: background .2s ease, color .2s ease;
+        }
+
+        .logout:hover {
+            background: rgba(213,143,143,.1);
+            color: var(--danger);
         }
 
         .main {
@@ -1073,86 +1106,14 @@
 <body>
 
 @php
-    /*
-    |--------------------------------------------------------------------------
-    | Menyiapkan data tagihan dari Controller
-    |--------------------------------------------------------------------------
-    | Menggunakan beberapa alternatif nama kolom agar tampilan tetap
-    | kompatibel dengan struktur model tagihan yang umum digunakan.
-    */
-
-    $daftarTagihan = collect($tagihans ?? [])->map(function ($item, $index) {
-        $jumlah = data_get($item, 'jumlah')
-            ?? data_get($item, 'total')
-            ?? data_get($item, 'nominal')
-            ?? data_get($item, 'jumlah_tagihan')
-            ?? 0;
-
-        $tanggalJatuhTempo = data_get($item, 'tanggal_jatuh_tempo')
-            ?? data_get($item, 'jatuh_tempo')
-            ?? data_get($item, 'tanggal_tempo');
-
-        $tanggalBayar = data_get($item, 'tanggal_bayar');
-
-        $statusAsli = strtolower(trim((string) (
-            data_get($item, 'status') ?? 'belum dibayar'
-        )));
-
-        if (in_array($statusAsli, ['lunas', 'dibayar', 'paid', 'success', 'berhasil'])) {
-            $status = 'lunas';
-        } elseif (in_array($statusAsli, ['terlambat', 'overdue', 'telat'])) {
-            $status = 'terlambat';
-        } else {
-            $status = 'belum dibayar';
-
-            if ($tanggalJatuhTempo && strtotime($tanggalJatuhTempo) < strtotime(date('Y-m-d'))) {
-                $status = 'terlambat';
-            }
-        }
-
-        $bulan = data_get($item, 'bulan')
-            ?? data_get($item, 'periode')
-            ?? null;
-
-        $tahun = data_get($item, 'tahun')
-            ?? null;
-
-        if (!$bulan && $tanggalJatuhTempo) {
-            $bulan = date('F', strtotime($tanggalJatuhTempo));
-        }
-
-        if (!$tahun && $tanggalJatuhTempo) {
-            $tahun = date('Y', strtotime($tanggalJatuhTempo));
-        }
-
-        return [
-            'id' => data_get($item, 'id', $index + 1),
-            'kode' => data_get($item, 'kode_tagihan')
-                ?? data_get($item, 'nomor_tagihan')
-                ?? ('TAG-' . str_pad($index + 1, 4, '0', STR_PAD_LEFT)),
-            'bulan' => $bulan ?: '-',
-            'tahun' => $tahun ?: '',
-            'jumlah' => (float) $jumlah,
-            'jatuh_tempo' => $tanggalJatuhTempo,
-            'tanggal_bayar' => $tanggalBayar,
-            'status' => $status,
-            'keterangan' => data_get($item, 'keterangan') ?? '-',
-            'metode' => data_get($item, 'metode_pembayaran')
-                ?? data_get($item, 'metode')
-                ?? '-',
-        ];
-    });
-
-    $totalTagihan = $daftarTagihan->sum('jumlah');
-    $totalLunas = $daftarTagihan->where('status', 'lunas')->sum('jumlah');
-    $totalBelumLunas = $daftarTagihan
-        ->whereIn('status', ['belum dibayar', 'terlambat'])
-        ->sum('jumlah');
-
+    $daftarTagihan = collect($tagihans ?? []);
+    $bankAccountList = collect($bankAccounts ?? []);
+    $totalTagihan = (int) ($ringkasan['total_nominal'] ?? $daftarTagihan->sum('jumlah'));
+    $totalLunas = (int) ($ringkasan['total_terbayar'] ?? $daftarTagihan->where('status', 'lunas')->sum('jumlah'));
+    $totalBelumLunas = (int) ($ringkasan['total_sisa'] ?? $daftarTagihan->sum('sisa'));
     $jumlahBelumLunas = $daftarTagihan
-        ->whereIn('status', ['belum dibayar', 'terlambat'])
+        ->whereIn('status', ['belum_dibayar', 'dibayar_sebagian', 'terlambat', 'menunggu_verifikasi'])
         ->count();
-
     $tagihanJson = $daftarTagihan->values();
 @endphp
 
@@ -1163,12 +1124,11 @@
             <i class="bi bi-house-heart-fill"></i>
         </div>
         <div>
-            <div class="brand-name">KosHaven</div>
-            <div class="brand-subtitle">BOARDING HOUSE</div>
+            <div class="brand-name">KosHaven.</div>
         </div>
     </div>
 
-    <div class="nav-label">MENU UTAMA</div>
+    <div class="nav-label">MENU PENGHUNI</div>
 
     <nav class="nav-menu">
         <a href="{{ route('penghuni.dashboard') }}" class="nav-link" data-page-transition>
@@ -1188,30 +1148,37 @@
         </a>
 
         <a href="{{ route('penghuni.fasilitas.index') }}" class="nav-link" data-page-transition>
-            <i class="bi bi-stars"></i> Fasilitas Kos
+            <i class="bi bi-house-check"></i> Fasilitas Kos
         </a>
-    </nav>
 
-    <div class="nav-label">AKUN</div>
-
-    <nav class="nav-menu">
         <a href="{{ route('penghuni.profil.index') }}" class="nav-link" data-page-transition>
             <i class="bi bi-person-circle"></i> Profil Saya
         </a>
     </nav>
 
+    @php
+        $namaPenghuni = auth()->user()?->name ?? 'Penghuni KosHaven';
+        $inisialPenghuni = collect(preg_split('/\s+/', trim($namaPenghuni)))
+            ->filter()
+            ->take(2)
+            ->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))
+            ->implode('') ?: 'PG';
+    @endphp
     <div class="sidebar-bottom">
         <div class="profile-mini">
-            <div class="avatar" id="sidebarAvatar">AP</div>
+            <div class="avatar" id="sidebarAvatar">{{ $inisialPenghuni }}</div>
             <div>
-                <strong id="sidebarName">Andi Pratama</strong>
-                <span>Penghuni Kos</span>
+                <strong id="sidebarName">{{ $namaPenghuni }}</strong>
+                <span>Penghuni KosHaven</span>
             </div>
         </div>
 
-        <button class="logout" type="button" onclick="logout()">
-            <i class="bi bi-box-arrow-left"></i> Keluar
-        </button>
+        <form action="{{ route('logout') }}" method="POST" onsubmit="return confirm('Apakah kamu yakin ingin keluar dari dashboard?')">
+            @csrf
+            <button class="logout" type="submit">
+                <i class="bi bi-box-arrow-left"></i> Keluar
+            </button>
+        </form>
     </div>
 </aside>
 
@@ -1341,7 +1308,9 @@
                 <select class="form-control" id="statusFilter">
                     <option value="">Semua Status</option>
                     <option value="lunas">Lunas</option>
-                    <option value="belum dibayar">Belum Dibayar</option>
+                    <option value="menunggu_verifikasi">Menunggu Verifikasi</option>
+                    <option value="dibayar_sebagian">Dibayar Sebagian</option>
+                    <option value="belum_dibayar">Belum Dibayar</option>
                     <option value="terlambat">Terlambat</option>
                 </select>
 
@@ -1494,6 +1463,16 @@
                 </div>
 
                 <div class="detail-row">
+                    <span>Sisa Tagihan</span>
+                    <strong id="detailSisa">Rp 0</strong>
+                </div>
+
+                <div class="detail-row">
+                    <span>Bukti Pembayaran</span>
+                    <strong id="detailProof">-</strong>
+                </div>
+
+                <div class="detail-row">
                     <span>Keterangan</span>
                     <strong id="detailDescription">-</strong>
                 </div>
@@ -1513,48 +1492,115 @@
     </div>
 </div>
 
-<!-- MODAL METODE PEMBAYARAN -->
+<!-- MODAL FORM PEMBAYARAN TAGIHAN -->
 <div class="overlay" id="paymentModal">
-    <div class="modal">
+    <div class="modal" style="max-width:560px;">
         <div class="modal-header">
-            <h3>Metode Pembayaran</h3>
+            <h3>Bayar Tagihan KosHaven</h3>
             <button class="modal-close" type="button" onclick="closeModal('paymentModal')">
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
 
-        <div class="modal-body">
-            <p style="color:var(--muted);font-size:12px;line-height:1.7;">
-                Berikut metode pembayaran yang disediakan oleh pengelola kos.
-                Silakan pilih metode yang tersedia.
-            </p>
+        <form id="paymentForm" enctype="multipart/form-data">
+            <div class="modal-body" style="max-height:70vh;overflow-y:auto;">
+                <div class="detail-highlight" style="margin-bottom:14px;">
+                    <span id="payModalLabel">Sisa Tagihan</span>
+                    <strong id="payModalSisa">Rp 0</strong>
+                </div>
 
-            <div class="method-list" id="paymentMethodList">
-                <div class="method-item">
-                    <i class="bi bi-info-circle"></i>
+                <div class="method-list" id="paymentMethodList" style="margin-bottom:16px;"></div>
+
+                <div style="display:grid;gap:12px;">
                     <div>
-                        <strong>Memuat metode pembayaran...</strong>
-                        <small>Mohon tunggu sebentar</small>
+                        <label for="payMethod" style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;">
+                            Metode Pembayaran <span style="color:var(--danger)">*</span>
+                        </label>
+                        <select id="payMethod" name="metode_pembayaran" class="form-control" style="width:100%;" required>
+                            <option value="transfer">Transfer Bank</option>
+                            <option value="tunai">Tunai (Bayar Langsung ke Petugas)</option>
+                        </select>
                     </div>
+
+                    <div>
+                        <label for="payAmount" style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;">
+                            Nominal Pembayaran (Rp) <span style="color:var(--danger)">*</span>
+                        </label>
+                        <input
+                            type="number"
+                            id="payAmount"
+                            name="jumlah_bayar"
+                            class="form-control"
+                            style="width:100%;"
+                            min="1"
+                            step="1"
+                            required
+                        >
+                        <small id="payAmountHint" style="display:block;margin-top:4px;font-size:11px;color:var(--muted);">
+                            Dapat dibayar penuh atau dicicil sesuai kemampuan.
+                        </small>
+                    </div>
+
+                    <div>
+                        <label for="payDate" style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;">
+                            Tanggal Pembayaran <span style="color:var(--danger)">*</span>
+                        </label>
+                        <input
+                            type="date"
+                            id="payDate"
+                            name="tanggal_pembayaran"
+                            class="form-control"
+                            style="width:100%;"
+                            value="{{ now()->toDateString() }}"
+                            max="{{ now()->toDateString() }}"
+                            required
+                        >
+                    </div>
+
+                    <div id="proofFieldGroup">
+                        <label for="payProof" style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;">
+                            Upload Bukti Pembayaran (JPG, PNG, WEBP, PDF maks 2MB) <span id="proofRequiredMark" style="color:var(--danger)">*</span>
+                        </label>
+                        <input
+                            type="file"
+                            id="payProof"
+                            name="bukti_pembayaran"
+                            class="form-control"
+                            style="width:100%;padding:8px 10px;"
+                            accept=".jpg,.jpeg,.png,.webp,.pdf"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="payNote" style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;">
+                            Catatan (Opsional)
+                        </label>
+                        <input
+                            type="text"
+                            id="payNote"
+                            name="catatan"
+                            class="form-control"
+                            style="width:100%;"
+                            maxlength="500"
+                            placeholder="Contoh: Transfer via m-Banking BCA a.n. Nama Anda"
+                        >
+                    </div>
+
+                    <div id="paymentFormError" style="display:none;padding:10px 12px;border-radius:10px;background:rgba(213,143,143,.14);border:1px solid rgba(213,143,143,.35);color:#F3C2C2;font-size:12px;line-height:1.5;"></div>
                 </div>
             </div>
 
-            <div class="payment-warning">
-                <i class="bi bi-exclamation-triangle"></i>
-                Fitur pengiriman pembayaran belum terhubung ke sistem backend.
-                Silakan hubungi pengelola kos untuk menyelesaikan pembayaran.
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" onclick="closeModal('paymentModal')">
+                    Batal
+                </button>
+
+                <button class="btn btn-primary" type="submit" id="submitPaymentBtn">
+                    <i class="bi bi-send-check"></i>
+                    Kirim Pembayaran
+                </button>
             </div>
-        </div>
-
-        <div class="modal-footer">
-            <button class="btn btn-secondary" type="button" onclick="closeModal('paymentModal')">
-                Tutup
-            </button>
-
-            <button class="btn btn-primary btn-disabled" type="button" disabled>
-                Kirim Pembayaran
-            </button>
-        </div>
+        </form>
     </div>
 </div>
 
@@ -1569,6 +1615,8 @@
     ========================================================= */
 
     const tagihanData = @json($tagihanJson);
+    const bankAccounts = @json($bankAccountList);
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
     let currentTagihanIndex = null;
     let currentPage = 1;
@@ -1601,18 +1649,20 @@
 
     function statusLabel(status) {
         if (status === 'lunas') return 'Lunas';
+        if (status === 'menunggu_verifikasi') return 'Menunggu Verifikasi';
+        if (status === 'dibayar_sebagian') return 'Dibayar Sebagian';
         if (status === 'terlambat') return 'Terlambat';
-        if (status === 'belum dibayar') return 'Belum Dibayar';
+        if (status === 'belum_dibayar' || status === 'belum dibayar') return 'Belum Dibayar';
 
-        return 'Tidak Diketahui';
+        return 'Belum Dibayar';
     }
 
     function statusClass(status) {
         if (status === 'lunas') return 'status-paid';
         if (status === 'terlambat') return 'status-overdue';
-        if (status === 'belum dibayar') return 'status-pending';
+        if (status === 'menunggu_verifikasi' || status === 'dibayar_sebagian') return 'status-pending';
 
-        return 'status-unknown';
+        return 'status-pending';
     }
 
     /* =========================================================
@@ -1817,103 +1867,164 @@
         document.getElementById('detailMethod').textContent =
             item.metode || '-';
 
+        document.getElementById('detailSisa').textContent =
+            formatRupiah(item.sisa ?? item.jumlah);
+
+        const proofEl = document.getElementById('detailProof');
+        if (item.bukti_url) {
+            proofEl.innerHTML = `<a href="${escapeHTML(item.bukti_url)}" target="_blank" rel="noopener noreferrer" style="color:var(--primary-light);text-decoration:underline;">Lihat Bukti <i class="bi bi-box-arrow-up-right"></i></a>`;
+        } else {
+            proofEl.textContent = 'Belum ada bukti';
+        }
+
         document.getElementById('detailDescription').textContent =
-            item.keterangan || '-';
+            item.alasan_tolak
+                ? `${item.keterangan || '-'} (Ditolak: ${item.alasan_tolak})`
+                : (item.keterangan || '-');
 
         const payButton = document.getElementById('payButton');
 
-        if (item.status === 'lunas') {
-            payButton.style.display = 'none';
-        } else {
+        if (item.bisa_bayar) {
             payButton.style.display = 'inline-flex';
+        } else {
+            payButton.style.display = 'none';
         }
 
         openModal('detailModal');
     }
 
     /* =========================================================
-       METODE PEMBAYARAN
+       METODE & FORM PEMBAYARAN (BACKEND TERHUBUNG)
     ========================================================= */
-
-    const METHOD_KEY = 'koshaven_payment_methods';
-
-    function getPaymentMethods() {
-        try {
-            const stored = localStorage.getItem(METHOD_KEY);
-
-            if (!stored) return [];
-
-            const parsed = JSON.parse(stored);
-
-            if (!Array.isArray(parsed)) return [];
-
-            return parsed.filter(method => {
-                return method &&
-                    typeof method === 'object' &&
-                    method.name &&
-                    method.active !== false &&
-                    method.status !== 'nonaktif';
-            });
-        } catch (error) {
-            console.error('Gagal membaca metode pembayaran:', error);
-            return [];
-        }
-    }
 
     function renderPaymentMethods() {
         const container = document.getElementById('paymentMethodList');
-        const methods = getPaymentMethods();
 
-        if (methods.length === 0) {
+        if (!Array.isArray(bankAccounts) || bankAccounts.length === 0) {
             container.innerHTML = `
                 <div class="method-item">
-                    <i class="bi bi-info-circle"></i>
+                    <i class="bi bi-cash-stack"></i>
                     <div>
-                        <strong>Belum Ada Metode Pembayaran</strong>
-                        <small>Silakan hubungi pengelola kos untuk informasi pembayaran.</small>
+                        <strong>Pembayaran Tunai / Hubungi Pengelola KosHaven</strong>
+                        <small>Rekening bank belum dikonfigurasi, silakan gunakan metode Tunai.</small>
                     </div>
                 </div>
             `;
             return;
         }
 
-        const icons = {
-            qris: 'bi-qr-code',
-            transfer: 'bi-bank',
-            ewallet: 'bi-phone',
-            cash: 'bi-cash-stack'
-        };
-
-        container.innerHTML = methods.map(method => {
-            const type = String(method.type || method.category || '').toLowerCase();
-            const icon = icons[type] || 'bi-wallet2';
-
-            return `
-                <div class="method-item">
-                    <i class="bi ${icon}"></i>
+        container.innerHTML = bankAccounts.map(bank => `
+            <div class="method-item" style="justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <i class="bi bi-bank"></i>
                     <div>
-                        <strong>${escapeHTML(method.name)}</strong>
-                        <small>${escapeHTML(method.description || method.account || 'Metode pembayaran tersedia')}</small>
+                        <strong>${escapeHTML(bank.nama_bank)} - ${escapeHTML(bank.nomor_rekening)}</strong>
+                        <small>a.n. ${escapeHTML(bank.atas_nama)}</small>
                     </div>
                 </div>
-            `;
-        }).join('');
+            </div>
+        `).join('');
     }
+
+    function syncProofRequirement() {
+        const method = document.getElementById('payMethod').value;
+        const proofInput = document.getElementById('payProof');
+        const mark = document.getElementById('proofRequiredMark');
+        const isTransfer = method === 'transfer';
+
+        proofInput.required = isTransfer;
+        mark.style.display = isTransfer ? 'inline' : 'none';
+    }
+
+    document.getElementById('payMethod').addEventListener('change', syncProofRequirement);
 
     function openPaymentModal() {
         if (currentTagihanIndex === null) return;
 
         const item = tagihanData[currentTagihanIndex];
 
-        if (!item || item.status === 'lunas') {
-            showToast('Tagihan ini sudah lunas.');
+        if (!item || !item.bisa_bayar) {
+            showToast(item?.ada_menunggu
+                ? 'Tagihan ini sedang menunggu verifikasi pembayaran.'
+                : 'Tagihan ini sudah lunas.');
             return;
         }
 
+        const sisa = Number(item.sisa ?? item.jumlah ?? 0);
+        document.getElementById('payModalLabel').textContent = `Sisa Tagihan (${item.kode})`;
+        document.getElementById('payModalSisa').textContent = formatRupiah(sisa);
+
+        const amountInput = document.getElementById('payAmount');
+        amountInput.value = sisa;
+        amountInput.max = sisa;
+        document.getElementById('payAmountHint').textContent =
+            `Maksimal ${formatRupiah(sisa)}. Anda dapat membayar lunas atau mencicil.`;
+
+        document.getElementById('payMethod').value = 'transfer';
+        document.getElementById('payProof').value = '';
+        document.getElementById('payNote').value = '';
+        const errBox = document.getElementById('paymentFormError');
+        errBox.style.display = 'none';
+        errBox.textContent = '';
+
+        syncProofRequirement();
         renderPaymentMethods();
         closeModal('detailModal');
         openModal('paymentModal');
     }
+
+    document.getElementById('paymentForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        if (currentTagihanIndex === null) return;
+        const item = tagihanData[currentTagihanIndex];
+        if (!item || !item.bayar_url) return;
+
+        const submitBtn = document.getElementById('submitPaymentBtn');
+        const errBox = document.getElementById('paymentFormError');
+        errBox.style.display = 'none';
+        errBox.textContent = '';
+
+        const formData = new FormData(event.currentTarget);
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Mengirim...';
+
+        try {
+            const response = await fetch(item.bayar_url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+
+            const result = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                let message = result.message || 'Gagal mengirim pembayaran. Periksa kembali isian Anda.';
+                if (result.errors) {
+                    const firstError = Object.values(result.errors).flat()[0];
+                    if (firstError) message = firstError;
+                }
+                errBox.textContent = message;
+                errBox.style.display = 'block';
+                return;
+            }
+
+            closeModal('paymentModal');
+            showToast(result.message || 'Pembayaran berhasil dikirim dan menunggu verifikasi.');
+            setTimeout(() => window.location.reload(), 900);
+        } catch (error) {
+            errBox.textContent = 'Terjadi gangguan jaringan. Silakan coba lagi.';
+            errBox.style.display = 'block';
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-send-check"></i> Kirim Pembayaran';
+        }
+    });
 
     /* =========================================================
        MODAL DAN NOTIFIKASI

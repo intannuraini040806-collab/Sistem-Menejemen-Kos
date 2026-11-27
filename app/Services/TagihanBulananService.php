@@ -21,7 +21,7 @@ class TagihanBulananService
         ];
 
         Booking::with('kamar')
-            ->whereIn('status', ['disetujui', 'selesai'])
+            ->where('status', 'disetujui')
             ->orderBy('id')
             ->chunkById(100, function ($bookings) use (&$hasil) {
                 foreach ($bookings as $booking) {
@@ -52,10 +52,7 @@ class TagihanBulananService
                 'terlambat' => 0,
             ];
 
-            if (!in_array($booking->status, [
-                'disetujui',
-                'selesai',
-            ], true)) {
+            if ($booking->status !== 'disetujui') {
                 return $hasil;
             }
 

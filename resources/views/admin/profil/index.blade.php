@@ -1604,57 +1604,40 @@
            DATA PROFIL
         ===================================== */
 
-        const PROFILE_KEY = 'koshaven_admin_profile_v1';
+        @php
+            $authUser = auth()->user();
+            $serverProfile = $profileData ?? [
+                'id' => $authUser?->id ?? 0,
+                'fullName' => $authUser?->name ?? 'Admin KosHaven',
+                'email' => $authUser?->email ?? '',
+                'phone' => $authUser?->phone ?? '',
+            ];
+        @endphp
+        const serverProfile = @json($serverProfile);
+        const PROFILE_KEY = 'koshaven_admin_profile_u_' + String(serverProfile.id || 0);
+        const csrfToken = "{{ csrf_token() }}";
+        const updateProfileUrl = "{{ route('admin.profil.update') }}";
+        const updatePasswordUrl = "{{ route('admin.profil.password') }}";
 
         const defaultProfile = {
-            fullName: 'Administrator',
-            email: 'admin@koshaven.com',
-            phone: '',
+            fullName: serverProfile.fullName || 'Admin KosHaven',
+            email: serverProfile.email || '',
+            phone: serverProfile.phone || '',
             address: ''
         };
 
         let currentProfile = { ...defaultProfile };
 
-        function validateStoredProfile(data) {
-            if (
-                !data ||
-                typeof data !== 'object' ||
-                Array.isArray(data)
-            ) {
-                return { ...defaultProfile };
-            }
-
-            return {
-                fullName: typeof data.fullName === 'string'
-                    ? data.fullName.slice(0, 60)
-                    : defaultProfile.fullName,
-
-                email: typeof data.email === 'string'
-                    ? data.email.slice(0, 100)
-                    : defaultProfile.email,
-
-                phone: typeof data.phone === 'string'
-                    ? data.phone.slice(0, 20)
-                    : '',
-
-                address: typeof data.address === 'string'
-                    ? data.address.slice(0, 250)
-                    : ''
-            };
-        }
-
         function getProfile() {
             try {
                 const saved = localStorage.getItem(PROFILE_KEY);
+                const parsed = saved ? JSON.parse(saved) : {};
 
-                if (!saved) {
-                    return { ...defaultProfile };
-                }
-
-                return validateStoredProfile(JSON.parse(saved));
-
+                return {
+                    ...defaultProfile,
+                    address: typeof parsed?.address === 'string' ? parsed.address.slice(0, 250) : ''
+                };
             } catch (error) {
-                console.error('Gagal membaca data profil:', error);
                 return { ...defaultProfile };
             }
         }
@@ -1795,7 +1778,7 @@
 
         document.getElementById('profileForm').addEventListener(
             'submit',
-            function(event) {
+            async function(event) {
 
                 event.preventDefault();
 
@@ -1817,16 +1800,38 @@
                     return;
                 }
 
-                const saved = saveProfile(profile);
+                try {
+                    const response = await fetch(updateProfileUrl, {
+                        method: 'PUT',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            name: profile.fullName,
+                            email: profile.email,
+                            phone: profile.phone,
+                            address: profile.address
+                        })
+                    });
 
-                if (!saved) {
-                    return;
+                    const result = await response.json().catch(() => ({}));
+
+                    if (!response.ok) {
+                        const firstErr = result.errors ? Object.values(result.errors).flat()[0] : null;
+                        alert(firstErr || result.message || 'Gagal memperbarui profil.');
+                        return;
+                    }
+
+                    saveProfile(profile);
+                    currentProfile = { ...profile };
+                    updateProfileDisplay(currentProfile);
+                    alert(result.message || 'Profil admin berhasil disimpan.');
+                } catch (error) {
+                    alert('Terjadi gangguan jaringan saat menyimpan profil.');
                 }
-
-                currentProfile = { ...profile };
-                updateProfileDisplay(currentProfile);
-
-                alert('Profil admin berhasil disimpan.');
             }
         );
 
@@ -1953,7 +1958,7 @@
 
         document.getElementById('passwordForm').addEventListener(
             'submit',
-            function(event) {
+            async function(event) {
 
                 event.preventDefault();
 
@@ -1966,15 +1971,6 @@
                 const confirmPassword =
                     document.getElementById('confirmPassword').value;
 
-                if (oldPassword !== getDemoPassword()) {
-                    alert(
-                        'Password saat ini tidak sesuai dengan data demo.'
-                    );
-
-                    document.getElementById('oldPassword').focus();
-                    return;
-                }
-
                 if (
                     !validatePassword(
                         oldPassword,
@@ -1986,11 +1982,28 @@
                 }
 
                 try {
+                    const response = await fetch(updatePasswordUrl, {
+                        method: 'PUT',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            current_password: oldPassword,
+                            password: newPassword,
+                            password_confirmation: confirmPassword
+                        })
+                    });
 
-                    localStorage.setItem(
-                        PASSWORD_KEY,
-                        newPassword
-                    );
+                    const result = await response.json().catch(() => ({}));
+
+                    if (!response.ok) {
+                        const firstErr = result.errors ? Object.values(result.errors).flat()[0] : null;
+                        alert(firstErr || result.message || 'Gagal memperbarui password.');
+                        return;
+                    }
 
                     this.reset();
 
@@ -2009,18 +2022,9 @@
                         }
                     );
 
-                    alert('Password demo berhasil diperbarui.');
-
+                    alert(result.message || 'Password berhasil diperbarui.');
                 } catch (error) {
-
-                    console.error(
-                        'Gagal menyimpan password demo:',
-                        error
-                    );
-
-                    alert(
-                        'Password gagal diperbarui. Periksa penyimpanan browser kamu.'
-                    );
+                    alert('Terjadi gangguan jaringan saat mengubah password.');
                 }
 
             }

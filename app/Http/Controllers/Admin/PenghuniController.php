@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
+use App\Models\Contract;
+use App\Models\Kamar;
+use App\Models\TenantProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -31,6 +35,7 @@ class PenghuniController extends Controller
                     'bookings.id',
                     'bookings.tanggal_masuk',
                     'bookings.tanggal_keluar',
+                    'bookings.alasan_keluar',
                     'bookings.status',
                     'kamars.nomor_kamar',
                     'kamars.tipe'
@@ -48,12 +53,15 @@ class PenghuniController extends Controller
                 'tipe_kamar' => $booking->tipe ?? '-',
                 'tanggal_masuk' => $booking->tanggal_masuk ?? null,
                 'tanggal_keluar' => $booking->tanggal_keluar ?? null,
+                'alasan_keluar' => $booking->alasan_keluar ?? null,
                 'booking_id' => $booking->id ?? null,
                 'booking_status' => $booking->status ?? null,
                 'status' => $statusAktif ? 'aktif' : 'nonaktif',
                 'status_label' => $statusAktif
                     ? 'Aktif'
-                    : ($booking ? 'Nonaktif' : 'Belum memiliki booking'),
+                    : ($booking?->status === 'selesai'
+                        ? 'Selesai / Keluar'
+                        : ($booking ? 'Nonaktif' : 'Belum memiliki booking')),
             ];
         });
 
@@ -309,6 +317,112 @@ class PenghuniController extends Controller
         return redirect()
             ->route('admin.penghuni.index')
             ->with('success', 'Data penghuni berhasil diperbarui.');
+    }
+
+    /**
+     * Memproses keluar kos (check-out / berhenti sewa) penghuni aktif.
+     */
+    public function checkout(Request $request, $id)
+    {
+        $user = DB::table('users')
+            ->where('id', $id)
+            ->where('role', 'penghuni')
+            ->first();
+
+        if (! $user) {
+            abort(404, 'Data penghuni tidak ditemukan.');
+        }
+
+        $validated = $request->validate([
+            'tanggal_keluar' => ['required', 'date'],
+            'alasan_keluar' => ['nullable', 'string', 'max:500'],
+        ], [
+            'tanggal_keluar.required' => 'Tanggal keluar wajib diisi.',
+            'tanggal_keluar.date' => 'Format tanggal keluar tidak valid.',
+            'alasan_keluar.max' => 'Alasan keluar maksimal 500 karakter.',
+        ]);
+
+        $hasil = DB::transaction(function () use ($id, $validated) {
+            $booking = Booking::query()
+                ->where('user_id', $id)
+                ->where('status', 'disetujui')
+                ->latest('id')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $booking) {
+                return [
+                    'ok' => false,
+                    'message' => 'Penghuni ini tidak memiliki kontrak hunian aktif untuk di-check-out.',
+                ];
+            }
+
+            $adaTagihanBelumLunas = $booking->tagihans()
+                ->whereIn('status', [
+                    'belum_dibayar',
+                    'menunggu_verifikasi',
+                    'dibayar_sebagian',
+                    'terlambat',
+                ])
+                ->exists();
+
+            if ($adaTagihanBelumLunas) {
+                return [
+                    'ok' => false,
+                    'message' => 'Check-out ditolak. Penghuni masih memiliki tagihan yang belum lunas atau sedang menunggu verifikasi.',
+                ];
+            }
+
+            $alasan = isset($validated['alasan_keluar']) && trim((string) $validated['alasan_keluar']) !== ''
+                ? trim((string) $validated['alasan_keluar'])
+                : null;
+
+            $booking->update([
+                'status' => 'selesai',
+                'tanggal_keluar' => $validated['tanggal_keluar'],
+                'alasan_keluar' => $alasan,
+            ]);
+
+            Contract::query()
+                ->where('booking_id', $booking->id)
+                ->where('status', 'aktif')
+                ->update([
+                    'status' => 'selesai',
+                    'tanggal_akhir' => $validated['tanggal_keluar'],
+                ]);
+
+            TenantProfile::query()
+                ->where('user_id', $id)
+                ->update(['status_penghuni' => 'keluar']);
+
+            $kamar = Kamar::query()
+                ->whereKey($booking->kamar_id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($kamar) {
+                $penghuniAktifDiKamar = Booking::query()
+                    ->where('kamar_id', $kamar->id)
+                    ->where('status', 'disetujui')
+                    ->count();
+
+                $kamar->update([
+                    'jumlah_penghuni' => $penghuniAktifDiKamar,
+                    'status' => $kamar->status === 'maintenance'
+                        ? 'maintenance'
+                        : ($penghuniAktifDiKamar >= $kamar->kapasitas ? 'terisi' : 'tersedia'),
+                ]);
+            }
+
+            return [
+                'ok' => true,
+                'message' => 'Check-out berhasil diproses. Status hunian telah selesai dan kamar kembali tersedia.',
+            ];
+        }, 3);
+
+        return redirect()
+            ->route('admin.penghuni.index')
+            ->with($hasil['ok'] ? 'success' : 'error', $hasil['message']);
     }
 
     /**
