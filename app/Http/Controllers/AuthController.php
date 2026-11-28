@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Notifications\UserActivityNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
@@ -142,6 +143,15 @@ class AuthController extends Controller
             'password' => $validated['password'],
             'role' => 'penghuni',
         ]);
+
+        $user->notify(new UserActivityNotification([
+            'key' => 'welcome-' . $user->id,
+            'title' => 'Selamat Datang di KosHaven!',
+            'message' => 'Halo ' . $user->name . ', selamat bergabung menjadi penghuni KosHaven. Semoga nyaman dan betah selama tinggal di sini!',
+            'type' => 'welcome',
+            'icon' => 'bi-house-heart',
+            'url' => route('penghuni.dashboard'),
+        ]));
 
         // Login otomatis setelah registrasi berhasil.
         Auth::guard('web')->login($user);

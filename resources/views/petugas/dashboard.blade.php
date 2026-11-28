@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -17,22 +16,18 @@
             --surface: #242A31;
             --surface-light: #2D343D;
             --surface-soft: #363E48;
-
             --silver: #929DA8;
             --silver-light: #BBC4CD;
             --gold: #C6A477;
             --gold-light: #E0C49B;
             --ivory: #F4F0E8;
-
             --text: #F1F0EC;
             --muted: #A9B0B8;
             --muted-dark: #7F8994;
-
             --green: #91AE9B;
             --yellow: #D9B77F;
             --red: #D58F8F;
             --blue: #91AFC7;
-
             --border: rgba(198, 164, 119, .15);
             --sidebar-width: 270px;
             --radius: 12px;
@@ -75,9 +70,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* =========================
-           SIDEBAR
-        ========================= */
+        /* SIDEBAR */
 
         .sidebar {
             width: var(--sidebar-width);
@@ -151,20 +144,27 @@
             gap: 6px;
         }
 
-        .nav-menu a {
+        .nav-menu a,
+        .nav-menu button.nav-logout-button {
             display: flex;
             align-items: center;
             gap: 13px;
+            width: 100%;
             color: #B9C0C8;
             padding: 12px 14px;
             border-radius: 8px;
             font-size: 12px;
             font-weight: 500;
             transition: .2s ease;
+            border: none;
             border-left: 3px solid transparent;
+            background: transparent;
+            text-align: left;
+            cursor: pointer;
         }
 
-        .nav-menu a i {
+        .nav-menu a i,
+        .nav-menu button.nav-logout-button i {
             font-size: 17px;
             width: 20px;
             text-align: center;
@@ -178,10 +178,57 @@
             border-left-color: var(--gold);
         }
 
+        .nav-menu button.nav-logout-button {
+            color: var(--red);
+        }
+
+        .nav-menu button.nav-logout-button:hover {
+            background: rgba(213,143,143,.1);
+            color: #E5AAAA;
+            border-left-color: var(--red);
+        }
+
         .sidebar-bottom {
             margin-top: auto;
             border-top: 1px solid rgba(255,255,255,.09);
             padding-top: 8px;
+        }
+
+        /* =========================
+        SHARED LOGOUT COMPONENT
+        ========================= */
+
+        .sidebar-bottom .kh-logout-component-wrapper {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .sidebar-bottom .kh-logout-trigger {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 12px 14px;
+            color: #D58F8F;
+            background: rgba(213,143,143,.07);
+            border: 1px solid rgba(213,143,143,.12);
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            transition: .2s;
+        }
+
+        .sidebar-bottom .kh-logout-trigger:hover {
+            color: #E5AAAA;
+            background: rgba(213,143,143,.15);
+            border-color: rgba(213,143,143,.25);
+        }
+
+        .sidebar-bottom .kh-logout-trigger i {
+            font-size: 16px;
+            flex-shrink: 0;
         }
 
         .profile-mini {
@@ -229,9 +276,7 @@
             display: none;
         }
 
-        /* =========================
-           MAIN CONTENT
-        ========================= */
+        /* MAIN CONTENT */
 
         .main-content {
             margin-left: var(--sidebar-width);
@@ -239,9 +284,7 @@
             min-width: 0;
         }
 
-        /* =========================
-           TOPBAR
-        ========================= */
+        /* TOPBAR */
 
         .topbar {
             min-height: 78px;
@@ -333,9 +376,7 @@
             padding: 4px;
         }
 
-        /* =========================
-           CONTENT
-        ========================= */
+        /* CONTENT */
 
         .content {
             width: 100%;
@@ -806,9 +847,7 @@
             margin-top: 8px;
         }
 
-        /* =========================
-           RESPONSIVE
-        ========================= */
+        /* RESPONSIVE */
 
         @media (max-width: 1250px) {
             .stats-grid {
@@ -821,10 +860,6 @@
         }
 
         @media (max-width: 900px) {
-            :root {
-                --sidebar-width: 270px;
-            }
-
             .sidebar {
                 transform: translateX(-100%);
                 box-shadow: 15px 0 40px rgba(0,0,0,.25);
@@ -1108,12 +1143,11 @@
                     Profil Saya
                 </a>
 
-                <a href="{{ route('login') }}">
-                    <i class="bi bi-box-arrow-left"></i>
-                    Keluar
-                </a>
-
             </nav>
+
+            <div class="kh-logout-component-wrapper">
+                 @include('components.logout-modal')
+            </div>
 
             <div class="profile-mini">
                 <div class="profile-avatar">P</div>
@@ -1544,10 +1578,9 @@
 
     </main>
 
+
     <script>
-        /* =========================
-           TANGGAL OTOMATIS
-        ========================= */
+        /* TANGGAL OTOMATIS */
 
         function updateDate() {
             const dateElement = document.getElementById('currentDate');
@@ -1566,9 +1599,7 @@
 
         updateDate();
 
-        /* =========================
-           SIDEBAR MOBILE
-        ========================= */
+        /* SIDEBAR MOBILE */
 
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -1606,52 +1637,46 @@
             }
         }
 
-        /* =========================
-           MENU SIDEBAR
-        ========================= */
+        /* MENU SIDEBAR */
 
         const menuLinks = document.querySelectorAll('.nav-menu a');
 
         menuLinks.forEach(link => {
             link.addEventListener('click', function() {
-
                 if (window.innerWidth <= 900) {
                     closeSidebar();
                 }
-
             });
         });
 
-        /* =========================
-           NOTIFIKASI
-        ========================= */
+        /* NOTIFIKASI */
 
         function showNotification() {
             alert('Belum ada notifikasi baru.');
         }
 
-        /* =========================
-           TUTUP SIDEBAR DENGAN ESCAPE
-        ========================= */
+        /* ESCAPE UNTUK SIDEBAR */
 
         document.addEventListener('keydown', function(event) {
-
             if (event.key === 'Escape') {
+                const logoutModal = document.getElementById('khLogoutModal');
+
+                // Jika popup logout sedang terbuka,
+                // biarkan komponen logout menangani Escape.
+                if (logoutModal && logoutModal.classList.contains('is-visible')) {
+                    return;
+                }
+
                 closeSidebar();
             }
-
         });
 
-        /* =========================
-           RESPONSIVE SIDEBAR
-        ========================= */
+        /* RESPONSIVE SIDEBAR */
 
         window.addEventListener('resize', function() {
-
             if (window.innerWidth > 900) {
                 closeSidebar();
             }
-
         });
     </script>
 

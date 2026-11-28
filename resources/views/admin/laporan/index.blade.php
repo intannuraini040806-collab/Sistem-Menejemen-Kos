@@ -65,7 +65,6 @@
             min-height: 100vh;
         }
 
-
         /* SIDEBAR */
 
         .sidebar {
@@ -1207,7 +1206,6 @@
                 font-size: 10px;
             }
 
-            .kh-page-cover,
             .sidebar,
             .sidebar-overlay,
             .mobile-toggle,
@@ -1356,11 +1354,52 @@
                 transform: scaleY(1);
             }
         }
+
+        /* LOGOUT MODAL - SIDEBAR LAPORAN */
+        .sidebar-bottom .kh-logout-component-wrapper {
+            width: 100%;
+            margin-top: 0;
+        }
+
+        .sidebar-bottom .kh-logout-trigger {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 11px 3px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            background: transparent;
+            color: #BBC4CD;
+            text-align: left;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: .25s ease;
+        }
+
+        .sidebar-bottom .kh-logout-trigger:hover {
+            color: var(--gold-light);
+            background: rgba(255,255,255,.05);
+            padding-left: 9px;
+        }
+
+        .sidebar-bottom .kh-logout-trigger:active {
+            transform: scale(.97);
+        }
+
+        .sidebar-bottom .kh-logout-trigger i {
+            width: 18px;
+            font-size: 15px;
+            text-align: center;
+            flex-shrink: 0;
+        }
     </style>
 </head>
 
 <body>
-
 
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -1377,37 +1416,37 @@
         <div class="menu-label">MENU UTAMA</div>
 
         <nav class="nav-menu">
-            <a href="{{ route('admin.dashboard') }}" data-page-transition>
+            <a href="{{ route('admin.dashboard') }}">
                 <i class="bi bi-grid"></i>
                 <span>Dashboard</span>
             </a>
 
-            <a href="{{ route('admin.pengguna.index') }}" data-page-transition>
+            <a href="{{ route('admin.pengguna.index') }}">
                 <i class="bi bi-person-gear"></i>
                 <span>Manajemen Pengguna</span>
             </a>
 
-            <a href="{{ route('admin.kamar.index') }}" data-page-transition>
+            <a href="{{ route('admin.kamar.index') }}">
                 <i class="bi bi-door-closed"></i>
                 <span>Data Kamar</span>
             </a>
 
-            <a href="{{ route('admin.booking.index') }}" data-page-transition>
+            <a href="{{ route('admin.booking.index') }}">
                 <i class="bi bi-calendar-check"></i>
                 <span>Booking</span>
             </a>
 
-            <a href="{{ route('admin.penghuni.index') }}" data-page-transition>
+            <a href="{{ route('admin.penghuni.index') }}">
                 <i class="bi bi-people"></i>
                 <span>Data Penghuni</span>
             </a>
 
-            <a href="{{ route('admin.petugas.index') }}" data-page-transition>
+            <a href="{{ route('admin.petugas.index') }}">
                 <i class="bi bi-person-badge"></i>
                 <span>Data Petugas</span>
             </a>
 
-            <a href="{{ route('admin.pengguna.index') }}" data-page-transition>
+            <a href="{{ route('admin.pengguna.index') }}">
                 <i class="bi bi-person-gear"></i>
                 <span>Data Pengguna</span>
             </a>
@@ -1416,12 +1455,12 @@
         <div class="menu-label">KEUANGAN &amp; LAINNYA</div>
 
         <nav class="nav-menu">
-            <a href="{{ route('admin.tagihan.index') }}" data-page-transition>
+            <a href="{{ route('admin.tagihan.index') }}">
                 <i class="bi bi-receipt"></i>
                 <span>Tagihan</span>
             </a>
 
-            <a href="{{ route('admin.pembayaran.index') }}" data-page-transition>
+            <a href="{{ route('admin.pembayaran.index') }}">
                 <i class="bi bi-wallet"></i>
                 <span>Pembayaran</span>
             </a>
@@ -1433,7 +1472,7 @@
                 <span>Laporan</span>
             </a>
 
-            <a href="{{ route('admin.profil.index') }}" data-page-transition>
+            <a href="{{ route('admin.profil.index') }}">
                 <i class="bi bi-person-circle"></i>
                 <span>Profil Admin</span>
             </a>
@@ -1451,20 +1490,15 @@
         </div>
 
         <div class="sidebar-bottom">
-            <form action="{{ route('logout') }}" method="POST"
-                  onsubmit="return confirmLogout()">
-                @csrf
-                <button type="submit">
-                    <i class="bi bi-box-arrow-right"></i>
-                    <span>Keluar</span>
-                </button>
-            </form>
+            <div class="kh-logout-component-wrapper">
+                @include('components.logout-modal')
+            </div>
         </div>
 
     </aside>
 
     <!-- MAIN -->
-    <main class="main" data-page-enter>
+    <main class="main">
 
         <header class="topbar">
             <div style="display:flex;align-items:center;gap:13px;min-width:0">
@@ -1480,7 +1514,7 @@
                 </button>
 
                 <div>
-                    <h1 data-reveal-words>Laporan</h1>
+                    <h1>Laporan</h1>
                     <p>Rekap dan informasi pengelolaan KosHaven</p>
                 </div>
             </div>
@@ -1493,7 +1527,8 @@
             </div>
         </header>
 
-        <section class="welcome" data-scroll-reveal>
+        <!-- WELCOME -->
+        <section class="welcome">
             <div>
                 <h2>Laporan Pengelolaan Kos</h2>
                 <p>Pantau pendapatan, pembayaran, kamar, dan penghuni dalam satu halaman.</p>
@@ -1502,7 +1537,7 @@
         </section>
 
         <!-- FILTER PERIODE -->
-        <section class="filter-card" data-scroll-reveal>
+        <section class="filter-card">
             <div class="filter-title">
                 <i class="bi bi-funnel"></i>
                 Filter Periode Laporan
@@ -1518,6 +1553,7 @@
                         <option value="all" {{ $bulan === 'all' ? 'selected' : '' }}>
                             Semua Bulan
                         </option>
+
                         @foreach([
                             '01'=>'Januari',
                             '02'=>'Februari',
@@ -1545,7 +1581,7 @@
                     <select id="yearFilter" name="tahun">
                         @for($year = now()->year - 5; $year <= now()->year + 1; $year++)
                             <option value="{{ $year }}"
-                                {{ (int)$tahun === $year ? 'selected' : '' }}>
+                                {{ (int) $tahun === $year ? 'selected' : '' }}>
                                 {{ $year }}
                             </option>
                         @endfor
@@ -1567,20 +1603,14 @@
         </section>
 
         <!-- RINGKASAN -->
-        <div class="section-heading" data-scroll-reveal>
+        <div class="section-heading">
             <h3>Ringkasan Laporan</h3>
-            <span id="periodLabel">
-                {{ $bulan === 'all'
-                    ? 'Semua Bulan'
-                    : \Carbon\Carbon::createFromDate($tahun, (int)$bulan, 1)->translatedFormat('F')
-                }}
-                {{ $tahun }}
-            </span>
+            <span>{{ $periodeLabel }}</span>
         </div>
 
-        <section class="stats-grid" data-scroll-reveal>
+        <section class="stats-grid">
 
-            <div class="stat-card" data-motion-card>
+            <div class="stat-card">
                 <div class="stat-top">
                     <span class="stat-label">Total Pendapatan</span>
                     <div class="stat-icon icon-green">
@@ -1590,12 +1620,14 @@
                 <div class="stat-value">
                     Rp{{ number_format($totalPendapatan, 0, ',', '.') }}
                 </div>
-                <div class="stat-note">Total pembayaran yang sudah disetujui pada periode</div>
+                <div class="stat-note">
+                    Total pembayaran yang sudah disetujui pada periode
+                </div>
             </div>
 
-            <div class="stat-card" data-motion-card>
+            <div class="stat-card">
                 <div class="stat-top">
-                    <span class="stat-label">Pembayaran Lunas</span>
+                    <span class="stat-label">Tagihan Lunas</span>
                     <div class="stat-icon icon-gold">
                         <i class="bi bi-check-circle"></i>
                     </div>
@@ -1604,20 +1636,22 @@
                 <div class="stat-note">Tagihan dengan status lunas</div>
             </div>
 
-            <div class="stat-card" data-motion-card>
+            <div class="stat-card">
                 <div class="stat-top">
-                    <span class="stat-label">Pembayaran Pending</span>
+                    <span class="stat-label">Tagihan Belum Lunas</span>
                     <div class="stat-icon icon-blue">
                         <i class="bi bi-clock-history"></i>
                     </div>
                 </div>
                 <div class="stat-value">{{ number_format($tagihanTertunda) }}</div>
-                <div class="stat-note">Tagihan belum dibayar atau menunggu verifikasi</div>
+                <div class="stat-note">
+                    Tagihan belum dibayar, menunggu verifikasi, atau dibayar sebagian
+                </div>
             </div>
 
-            <div class="stat-card" data-motion-card>
+            <div class="stat-card">
                 <div class="stat-top">
-                    <span class="stat-label">Pembayaran Terlambat</span>
+                    <span class="stat-label">Tagihan Terlambat</span>
                     <div class="stat-icon icon-red">
                         <i class="bi bi-exclamation-circle"></i>
                     </div>
@@ -1629,14 +1663,14 @@
         </section>
 
         <!-- ANALISIS -->
-        <div class="section-heading" data-scroll-reveal>
+        <div class="section-heading">
             <h3>Analisis Pembayaran</h3>
             <span>Data berdasarkan periode terpilih</span>
         </div>
 
-        <section class="report-grid" data-scroll-reveal>
+        <section class="report-grid">
 
-            <div class="panel" data-motion-card>
+            <div class="panel">
                 <div class="panel-header">
                     <h3>Grafik Pendapatan</h3>
                     <span>Dalam Rupiah</span>
@@ -1646,11 +1680,11 @@
 
                 <div class="legend">
                     <span class="legend-dot"></span>
-                    Pendapatan pembayaran lunas
+                    Pendapatan dari pembayaran yang disetujui
                 </div>
             </div>
 
-            <div class="panel" data-motion-card>
+            <div class="panel">
                 <div class="panel-header">
                     <h3>Status Tagihan</h3>
                     <span>{{ number_format($totalTagihan) }} tagihan</span>
@@ -1668,7 +1702,7 @@
                         </div>
                         <div class="progress-track">
                             <div class="progress-fill fill-green"
-                                 data-progress="{{ max(0, min(100, (float)$persentaseLunas)) }}"></div>
+                                 data-progress="{{ max(0, min(100, (float) $persentaseLunas)) }}"></div>
                         </div>
                     </div>
 
@@ -1676,13 +1710,13 @@
                         <div class="payment-item">
                             <div class="payment-left">
                                 <span class="payment-dot dot-yellow"></span>
-                                <span>Pending</span>
+                                <span>Belum Lunas</span>
                             </div>
                             <span class="payment-count">{{ $persentaseTertunda }}%</span>
                         </div>
                         <div class="progress-track">
                             <div class="progress-fill fill-yellow"
-                                 data-progress="{{ max(0, min(100, (float)$persentaseTertunda)) }}"></div>
+                                 data-progress="{{ max(0, min(100, (float) $persentaseTertunda)) }}"></div>
                         </div>
                     </div>
 
@@ -1696,7 +1730,7 @@
                         </div>
                         <div class="progress-track">
                             <div class="progress-fill fill-red"
-                                 data-progress="{{ max(0, min(100, (float)$persentaseTerlambat)) }}"></div>
+                                 data-progress="{{ max(0, min(100, (float) $persentaseTerlambat)) }}"></div>
                         </div>
                     </div>
 
@@ -1706,14 +1740,14 @@
         </section>
 
         <!-- REKAP KAMAR DAN PENGHUNI -->
-        <div class="section-heading" data-scroll-reveal>
+        <div class="section-heading">
             <h3>Rekap Kamar dan Penghuni</h3>
             <span>Ringkasan data operasional</span>
         </div>
 
-        <section class="stats-grid" data-scroll-reveal>
+        <section class="stats-grid">
 
-            <div class="stat-card" data-motion-card>
+            <div class="stat-card">
                 <div class="stat-top">
                     <span class="stat-label">Total Kamar</span>
                     <div class="stat-icon icon-blue">
@@ -1724,7 +1758,7 @@
                 <div class="stat-note">Jumlah kamar terdaftar</div>
             </div>
 
-            <div class="stat-card" data-motion-card>
+            <div class="stat-card">
                 <div class="stat-top">
                     <span class="stat-label">Kamar Terisi</span>
                     <div class="stat-icon icon-green">
@@ -1735,7 +1769,7 @@
                 <div class="stat-note">Kamar sedang ditempati</div>
             </div>
 
-            <div class="stat-card" data-motion-card>
+            <div class="stat-card">
                 <div class="stat-top">
                     <span class="stat-label">Kamar Kosong</span>
                     <div class="stat-icon icon-gold">
@@ -1746,26 +1780,28 @@
                 <div class="stat-note">Kamar tersedia untuk penghuni</div>
             </div>
 
-            <div class="stat-card" data-motion-card>
+            <div class="stat-card">
                 <div class="stat-top">
-                    <span class="stat-label">Total Penghuni</span>
+                    <span class="stat-label">Penghuni Aktif</span>
                     <div class="stat-icon icon-red">
                         <i class="bi bi-people"></i>
                     </div>
                 </div>
                 <div class="stat-value">{{ number_format($totalPenghuniAktif) }}</div>
-                <div class="stat-note">Penghuni dengan booking disetujui</div>
+                <div class="stat-note">
+                    Booking disetujui dengan masa hunian yang masih aktif
+                </div>
             </div>
 
         </section>
 
         <!-- RINCIAN TRANSAKSI -->
-        <div class="section-heading" data-scroll-reveal>
+        <div class="section-heading">
             <h3>Rincian Transaksi Pembayaran</h3>
             <span>Daftar transaksi berdasarkan filter</span>
         </div>
 
-        <section class="panel" data-scroll-reveal>
+        <section class="panel">
             <div class="table-wrap">
                 <table>
                     <thead>
@@ -1784,7 +1820,7 @@
                         @forelse($pembayaran as $index => $item)
                             @php
                                 $statusLabel = match($item->status) {
-                                    'disetujui' => 'Lunas',
+                                    'disetujui' => 'Disetujui',
                                     'menunggu_verifikasi' => 'Menunggu Verifikasi',
                                     'ditolak' => 'Ditolak',
                                     default => ucfirst(str_replace('_', ' ', $item->status ?? '-'))
@@ -1800,18 +1836,33 @@
 
                             <tr>
                                 <td>{{ $index + 1 }}</td>
-                                <td>{{ $item->nama_penghuni ?? 'Penghuni tidak ditemukan' }}</td>
-                                <td>{{ $item->nomor_kamar ?? '-' }}</td>
+
+                                <td>
+                                    {{ $item->nama_penghuni ?? 'Penghuni tidak ditemukan' }}
+                                </td>
+
+                                <td>
+                                    {{ $item->nomor_kamar ?? '-' }}
+                                </td>
+
                                 <td>
                                     {{ $item->tanggal_laporan
                                         ? \Carbon\Carbon::parse($item->tanggal_laporan)->translatedFormat('d M Y')
                                         : '-'
                                     }}
                                 </td>
-                                <td>{{ ucfirst($item->metode ?? '-') }}</td>
+
+                                <td>
+                                    {{ $item->metode
+                                        ? ucfirst(str_replace('_', ' ', $item->metode))
+                                        : '-'
+                                    }}
+                                </td>
+
                                 <td>
                                     Rp{{ number_format($item->jumlah_bayar ?? 0, 0, ',', '.') }}
                                 </td>
+
                                 <td>
                                     <span class="status {{ $statusClass }}">
                                         {{ $statusLabel }}
@@ -1831,11 +1882,13 @@
             </div>
         </section>
 
+        <!-- KETERANGAN DATA -->
         <div class="data-notice">
             <i class="bi bi-info-circle"></i>
             Laporan ini mengambil data langsung dari database KosHaven.
-            Ringkasan tagihan mengikuti periode tagihan, sedangkan pendapatan
-            dan rincian transaksi mengikuti tanggal pembayaran.
+            Data tagihan dihitung berdasarkan periode tagihan, sedangkan
+            pendapatan dan rincian transaksi dihitung berdasarkan tanggal
+            pembayaran. Pendapatan hanya mencakup transaksi yang sudah disetujui.
         </div>
 
         <div class="report-footer">
@@ -1895,11 +1948,15 @@
     });
 
     document.addEventListener('keydown', event => {
-        if (event.key === 'Escape') closeSidebar();
+        if (event.key === 'Escape') {
+            closeSidebar();
+        }
     });
 
     window.addEventListener('resize', () => {
-        if (window.innerWidth > 768) closeSidebar();
+        if (window.innerWidth > 768) {
+            closeSidebar();
+        }
     });
 
     function confirmLogout() {
@@ -1919,6 +1976,16 @@
         }).format(Number(value) || 0);
     }
 
+    function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, char => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        })[char]);
+    }
+
     function renderChart() {
         const chart = document.getElementById('incomeChart');
 
@@ -1935,7 +2002,10 @@
             return;
         }
 
-        const maxValue = Math.max(...chartValues.map(Number), 1);
+        const maxValue = Math.max(
+            ...chartValues.map(value => Number(value) || 0),
+            1
+        );
 
         chart.innerHTML = chartLabels.map((label, index) => {
             const value = Number(chartValues[index]) || 0;
@@ -1952,23 +2022,15 @@
                         ? String(value)
                         : '';
 
-            const safeLabel = String(label).replace(/[&<>"']/g, char => ({
-                '&':'&amp;',
-                '<':'&lt;',
-                '>':'&gt;',
-                '"':'&quot;',
-                "'":'&#039;'
-            })[char]);
-
             return `
                 <div class="chart-column">
-                    <span class="chart-value">${valueLabel}</span>
+                    <span class="chart-value">${escapeHtml(valueLabel)}</span>
                     <div
                         class="chart-bar"
                         data-height="${height}"
-                        title="${formatRupiah(value)}">
+                        title="${escapeHtml(formatRupiah(value))}">
                     </div>
-                    <span class="chart-month">${safeLabel}</span>
+                    <span class="chart-month">${escapeHtml(label)}</span>
                 </div>
             `;
         }).join('');

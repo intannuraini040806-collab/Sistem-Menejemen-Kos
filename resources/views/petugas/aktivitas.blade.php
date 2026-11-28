@@ -188,6 +188,43 @@
             border-top: 1px solid var(--border);
         }
 
+        /* =========================
+        SHARED LOGOUT COMPONENT
+        ========================= */
+
+        .sidebar-bottom .kh-logout-component-wrapper {
+            width: 100%;
+            margin-top: 0;
+        }
+
+        .sidebar-bottom .kh-logout-trigger {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 12px 14px;
+            color: #D58F8F;
+            background: rgba(213,143,143,.07);
+            border: 1px solid rgba(213,143,143,.12);
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            transition: .2s;
+        }
+
+        .sidebar-bottom .kh-logout-trigger:hover {
+            color: #E5AAAA;
+            background: rgba(213,143,143,.15);
+            border-color: rgba(213,143,143,.25);
+        }
+
+        .sidebar-bottom .kh-logout-trigger i {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
         .user-card {
             display: flex;
             align-items: center;
@@ -222,26 +259,6 @@
         .user-info small {
             color: var(--silver);
             font-size: 10px;
-        }
-
-        .logout-btn {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 11px 13px;
-            border: 1px solid rgba(213,143,143,.2);
-            border-radius: 8px;
-            background: transparent;
-            color: var(--red);
-            font-size: 11px;
-            text-align: left;
-            transition: .2s;
-        }
-
-        .logout-btn:hover {
-            background: var(--red-bg);
-            border-color: rgba(213,143,143,.4);
         }
 
         /* =========================
@@ -1221,10 +1238,9 @@
                 </div>
             </div>
 
-            <button class="logout-btn" id="logoutBtn" type="button">
-                <i class="bi bi-box-arrow-left"></i>
-                Keluar dari akun
-            </button>
+            <div class="kh-logout-component-wrapper">
+                @include('components.logout-modal')
+            </div>
         </div>
     </aside>
 

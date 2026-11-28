@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -226,25 +225,34 @@
             font-size: 10px;
         }
 
-        .logout {
+        /* LOGOUT MODAL TRIGGER */
+
+        .logout-component-wrapper {
             width: 100%;
-            border: none;
-            background: transparent;
-            color: #AEB7C0;
-            text-align: left;
-            padding: 12px 14px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            font-size: 12px;
-            border-radius: 8px;
-            transition: background .2s ease, color .2s ease;
+            margin-top: 3px;
         }
 
-        .logout:hover {
+        .logout-component-wrapper .kh-logout-trigger {
+            width: 100%;
+            justify-content: flex-start;
+            padding: 12px 14px;
+            color: #AEB7C0;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .logout-component-wrapper .kh-logout-trigger:hover {
+            color: #D58F8F;
             background: rgba(213,143,143,.1);
-            color: var(--danger);
+            border-color: rgba(213,143,143,.12);
+            transform: none;
+        }
+
+        .logout-component-wrapper .kh-logout-trigger svg {
+            width: 17px;
+            height: 17px;
         }
 
         .sidebar-overlay {
@@ -337,6 +345,162 @@
             position: absolute;
             top: 6px;
             right: 6px;
+        }
+
+        .notification-wrap {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .notification .notification-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            min-width: 17px;
+            height: 17px;
+            padding: 0 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            background: #D58F8F;
+            color: #191D22;
+            border: 2px solid var(--background);
+            font-size: 9px;
+            font-weight: 800;
+        }
+
+        .notification .notification-count[hidden] {
+            display: none;
+        }
+
+        .notification-panel {
+            position: absolute;
+            top: calc(100% + 13px);
+            right: 0;
+            z-index: 120;
+            width: min(380px, calc(100vw - 30px));
+            max-height: min(520px, 75vh);
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            box-shadow: 0 18px 50px rgba(0,0,0,.35);
+        }
+
+        .notification-panel.open {
+            display: flex;
+        }
+
+        .notification-head {
+            padding: 16px 17px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .notification-head strong {
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        .notification-head button {
+            color: var(--primary-light);
+            background: none;
+            border: 0;
+            font-size: 10px;
+            cursor: pointer;
+        }
+
+        .notification-list {
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            display: flex;
+            gap: 12px;
+            padding: 14px 16px;
+            color: inherit;
+            text-decoration: none;
+            border-bottom: 1px solid var(--border);
+            transition: background .2s ease;
+        }
+
+        .notification-item:hover {
+            background: rgba(255,255,255,.035);
+        }
+
+        .notification-item.unread {
+            background: rgba(198,164,119,.055);
+        }
+
+        .notification-item-icon {
+            width: 36px;
+            height: 36px;
+            flex: 0 0 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(198,164,119,.13);
+            color: var(--primary-light);
+            font-size: 16px;
+        }
+
+        .notification-item-copy {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .notification-item-copy strong {
+            display: block;
+            color: var(--text);
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+
+        .notification-item-copy p {
+            color: var(--muted);
+            font-size: 10px;
+            line-height: 1.55;
+            margin: 0 0 6px;
+            overflow-wrap: anywhere;
+        }
+
+        .notification-item-copy small {
+            color: var(--muted-dark);
+            font-size: 9px;
+        }
+
+        .notification-empty {
+            padding: 30px 18px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .notification-empty i {
+            display: block;
+            color: var(--primary-light);
+            font-size: 25px;
+            margin-bottom: 8px;
+        }
+
+        .notification-loading {
+            padding: 22px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        @media (max-width:600px) {
+            .notification-panel {
+                right: -4px;
+            }
         }
 
         .content {
@@ -1043,6 +1207,7 @@
 
     @php
         $namaPenghuni = $user->name ?? 'Penghuni';
+
         $inisial = collect(preg_split('/\s+/', trim($namaPenghuni)))
             ->filter()
             ->take(2)
@@ -1165,15 +1330,10 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-
-                <button type="submit" class="logout"
-                    onclick="return confirm('Apakah kamu yakin ingin keluar dari dashboard?')">
-                    <i class="bi bi-box-arrow-left"></i>
-                    Keluar
-                </button>
-            </form>
+            <!-- TOMBOL LOGOUT DENGAN MODAL -->
+            <div class="logout-component-wrapper">
+                @include('components.logout-modal')
+            </div>
 
         </div>
 
@@ -1200,10 +1360,24 @@
 
             </div>
 
-            <button class="notification" onclick="showNotification()" aria-label="Notifikasi">
-                <i class="bi bi-bell"></i>
-                <span></span>
-            </button>
+            <div class="notification-wrap">
+                <button class="notification" type="button" id="notificationToggle"
+                    aria-label="Buka notifikasi" aria-expanded="false" aria-controls="notificationPanel">
+                    <i class="bi bi-bell"></i>
+                    <span class="notification-count" id="notificationCount" hidden>0</span>
+                </button>
+
+                <section class="notification-panel" id="notificationPanel" aria-label="Daftar notifikasi">
+                    <div class="notification-head">
+                        <strong>Notifikasi</strong>
+                        <button type="button" id="markAllNotificationsRead">Tandai semua dibaca</button>
+                    </div>
+
+                    <div class="notification-list" id="notificationList">
+                        <div class="notification-loading">Memuat notifikasi...</div>
+                    </div>
+                </section>
+            </div>
 
         </header>
 
@@ -1232,10 +1406,7 @@
                         <i class="bi bi-door-open"></i>
                     </div>
 
-                    <h3>
-                        {{ $kamar?->nomor_kamar ?? 'Belum ada' }}
-                    </h3>
-
+                    <h3>{{ $kamar?->nomor_kamar ?? 'Belum ada' }}</h3>
                     <p>Nomor Kamar</p>
                 </div>
 
@@ -1274,6 +1445,7 @@
                 </div>
 
                 @if ($tagihanUtama)
+
                     <div class="bill-card">
 
                         <div>
@@ -1311,12 +1483,15 @@
                         </div>
 
                     </div>
+
                 @else
+
                     <div class="empty-state">
                         <i class="bi bi-receipt"></i>
                         <strong>Belum Ada Tagihan</strong>
                         <p>Tagihan pembayaran akan ditampilkan di sini setelah tersedia.</p>
                     </div>
+
                 @endif
 
             </section>
@@ -1339,18 +1514,22 @@
                     <div class="room-card">
 
                         @if ($kamar->foto)
+
                             <img
                                 src="{{ asset('storage/' . $kamar->foto) }}"
                                 alt="Foto {{ $kamar->nomor_kamar }}"
                                 class="room-image"
                                 onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80';"
                             >
+
                         @else
+
                             <img
                                 src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80"
                                 alt="Interior kamar kos"
                                 class="room-image"
                             >
+
                         @endif
 
                         <div class="room-details">
@@ -1391,7 +1570,9 @@
                                 </span>
 
                                 @if (!empty($fasilitasKamar))
+
                                     @foreach (array_slice($fasilitasKamar, 0, 5) as $fasilitas)
+
                                         @php
                                             $namaFasilitas = is_array($fasilitas)
                                                 ? ($fasilitas['nama'] ?? $fasilitas['name'] ?? 'Fasilitas')
@@ -1416,7 +1597,9 @@
                                             <i class="bi {{ $iconFasilitas }}"></i>
                                             {{ $namaFasilitas }}
                                         </span>
+
                                     @endforeach
+
                                 @endif
 
                             </div>
@@ -1426,6 +1609,7 @@
                     </div>
 
                 @else
+
                     <div class="empty-state">
                         <i class="bi bi-door-open"></i>
                         <strong>Belum Ada Kamar Aktif</strong>
@@ -1433,6 +1617,7 @@
                             Informasi kamar akan muncul setelah booking kamu disetujui oleh Admin atau Petugas.
                         </p>
                     </div>
+
                 @endif
 
             </section>
@@ -1461,6 +1646,7 @@
                         <tbody>
 
                             @forelse ($riwayatPembayaran as $pembayaran)
+
                                 @php
                                     $statusBayar = $statusPembayaran[$pembayaran->status]
                                         ?? ['Tidak diketahui', 'pending'];
@@ -1471,6 +1657,7 @@
                                 @endphp
 
                                 <tr>
+
                                     <td>
                                         {{ $pembayaran->tagihan
                                             ? $formatPeriode($pembayaran->tagihan->periode)
@@ -1492,14 +1679,17 @@
                                             {{ $statusBayar[0] }}
                                         </span>
                                     </td>
+
                                 </tr>
 
                             @empty
+
                                 <tr>
                                     <td colspan="5" style="text-align:center; padding:30px; color:#A9B0B8;">
                                         Belum ada riwayat pembayaran.
                                     </td>
                                 </tr>
+
                             @endforelse
 
                         </tbody>
@@ -1521,9 +1711,11 @@
                     </div>
 
                     @if ($kamar && !empty($fasilitasKamar))
+
                         <div class="facility-grid">
 
                             @foreach ($fasilitasKamar as $fasilitas)
+
                                 @php
                                     $namaFasilitas = is_array($fasilitas)
                                         ? ($fasilitas['nama'] ?? $fasilitas['name'] ?? 'Fasilitas')
@@ -1545,6 +1737,7 @@
                                 @endphp
 
                                 <div class="facility-item">
+
                                     <div class="facility-icon">
                                         <i class="bi {{ $iconFasilitas }}"></i>
                                     </div>
@@ -1553,10 +1746,13 @@
                                         <strong>{{ $namaFasilitas }}</strong>
                                         <small>Fasilitas kamar</small>
                                     </div>
+
                                 </div>
+
                             @endforeach
 
                             <div class="facility-item">
+
                                 <div class="facility-icon">
                                     <i class="bi bi-droplet"></i>
                                 </div>
@@ -1569,21 +1765,27 @@
                                     </strong>
                                     <small>Jenis kamar mandi</small>
                                 </div>
+
                             </div>
 
                         </div>
+
                     @elseif ($kamar)
+
                         <div class="empty-state">
                             <i class="bi bi-house-check"></i>
                             <strong>Belum Ada Data Fasilitas</strong>
                             <p>Data fasilitas untuk kamar ini belum ditambahkan.</p>
                         </div>
+
                     @else
+
                         <div class="empty-state">
                             <i class="bi bi-house"></i>
                             <strong>Fasilitas Belum Tersedia</strong>
                             <p>Fasilitas akan ditampilkan setelah kamu memiliki kamar aktif.</p>
                         </div>
+
                     @endif
 
                 </div>
@@ -1664,10 +1866,180 @@
             document.body.style.overflow = '';
         }
 
-        // NOTIFIKASI
-        function showNotification() {
-            alert('Belum ada notifikasi baru.');
+        // NOTIFIKASI PENGHUNI
+        const notificationToggle = document.getElementById('notificationToggle');
+        const notificationPanel = document.getElementById('notificationPanel');
+        const notificationList = document.getElementById('notificationList');
+        const notificationCount = document.getElementById('notificationCount');
+        const markAllNotificationsRead = document.getElementById('markAllNotificationsRead');
+
+        const notificationUrl = @json(route('penghuni.notifications.index'));
+        const notificationReadUrl = @json(url('/penghuni/notifications'));
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+        function escapeNotificationHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[char]));
         }
+
+        function updateNotificationCount(count) {
+            const safeCount = Math.max(0, Number(count) || 0);
+
+            notificationCount.textContent = safeCount > 99 ? '99+' : safeCount;
+            notificationCount.hidden = safeCount === 0;
+        }
+
+        async function loadNotifications() {
+            notificationList.innerHTML =
+                '<div class="notification-loading">Memuat notifikasi...</div>';
+
+            try {
+                const response = await fetch(notificationUrl, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Gagal mengambil notifikasi.');
+                }
+
+                const result = await response.json();
+
+                updateNotificationCount(result.unread_count);
+
+                if (!result.notifications.length) {
+                    notificationList.innerHTML =
+                        '<div class="notification-empty"><i class="bi bi-bell-slash"></i>Belum ada notifikasi.<br>Informasi terbaru akan muncul di sini.</div>';
+
+                    return;
+                }
+
+                notificationList.innerHTML = result.notifications.map(item => {
+                    const title = escapeNotificationHtml(item.title);
+                    const message = escapeNotificationHtml(item.message);
+                    const icon = /^[a-z0-9-]+$/.test(item.icon || '')
+                        ? item.icon
+                        : 'bi-bell';
+
+                    const href = escapeNotificationHtml(
+                        item.url || @json(route('penghuni.dashboard'))
+                    );
+
+                    return `<a class="notification-item ${item.read ? '' : 'unread'}"
+                        href="${href}" data-notification-id="${escapeNotificationHtml(item.id)}">
+                        <span class="notification-item-icon"><i class="bi ${icon}"></i></span>
+                        <span class="notification-item-copy">
+                            <strong>${title}</strong>
+                            <p>${message}</p>
+                            <small>${escapeNotificationHtml(item.created_at || '')}</small>
+                        </span>
+                    </a>`;
+                }).join('');
+
+            } catch (error) {
+                notificationList.innerHTML =
+                    '<div class="notification-empty">Notifikasi belum dapat dimuat. Coba buka kembali.</div>';
+            }
+        }
+
+        async function markNotificationRead(id) {
+            const response = await fetch(
+                `${notificationReadUrl}/${encodeURIComponent(id)}/read`,
+                {
+                    method: 'PATCH',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Gagal memperbarui notifikasi.');
+            }
+        }
+
+        notificationToggle?.addEventListener('click', async () => {
+            const willOpen = !notificationPanel.classList.contains('open');
+
+            notificationPanel.classList.toggle('open', willOpen);
+            notificationToggle.setAttribute('aria-expanded', String(willOpen));
+
+            if (willOpen) {
+                await loadNotifications();
+            }
+        });
+
+        notificationList?.addEventListener('click', async event => {
+            const link = event.target.closest('[data-notification-id]');
+
+            if (!link) return;
+
+            event.preventDefault();
+
+            try {
+                await markNotificationRead(link.dataset.notificationId);
+            } catch (error) {
+                // Tetap lanjutkan navigasi jika pembaruan status gagal.
+            }
+
+            window.location.href = link.href;
+        });
+
+        markAllNotificationsRead?.addEventListener('click', async () => {
+            try {
+                const response = await fetch(
+                    `${notificationReadUrl}/read-all`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        credentials: 'same-origin'
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Gagal memperbarui notifikasi.');
+                }
+
+                await loadNotifications();
+
+            } catch (error) {
+                notificationList.insertAdjacentHTML(
+                    'afterbegin',
+                    '<div class="notification-empty">Gagal menandai notifikasi. Silakan coba lagi.</div>'
+                );
+            }
+        });
+
+        document.addEventListener('click', event => {
+            if (!event.target.closest('.notification-wrap')) {
+                notificationPanel?.classList.remove('open');
+                notificationToggle?.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') {
+                notificationPanel?.classList.remove('open');
+                notificationToggle?.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        loadNotifications();
 
         // TANGGAL
         function updateDate() {
@@ -1683,8 +2055,7 @@
             });
 
             dateElement.innerHTML =
-                '<i class="bi bi-calendar3"></i> ' +
-                formattedDate;
+                '<i class="bi bi-calendar3"></i> ' + formattedDate;
         }
 
         updateDate();
@@ -1711,6 +2082,18 @@
         // TUTUP SIDEBAR DENGAN ESCAPE
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
+                const logoutModal = document.getElementById('khLogoutModal');
+
+                // Biarkan komponen logout menangani Escape sendiri.
+                if (logoutModal && logoutModal.classList.contains('is-visible')) {
+                    return;
+                }
+
+                // Tutup notifikasi.
+                notificationPanel?.classList.remove('open');
+                notificationToggle?.setAttribute('aria-expanded', 'false');
+
+                // Tutup sidebar.
                 closeSidebar();
             }
         });

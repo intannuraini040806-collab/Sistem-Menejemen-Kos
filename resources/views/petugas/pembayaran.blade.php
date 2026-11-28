@@ -183,23 +183,39 @@
             font-size: 10px;
         }
 
-        .logout-btn {
+        /* SHARED LOGOUT COMPONENT */
+
+        .sidebar-bottom .kh-logout-component-wrapper {
+            width: 100%;
+            margin-top: 0;
+        }
+
+        .sidebar-bottom .kh-logout-trigger {
             width: 100%;
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 11px 13px;
-            border: 1px solid rgba(213,143,143,.2);
-            border-radius: 8px;
-            background: transparent;
-            color: var(--danger);
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 12px 14px;
+            color: #D58F8F;
+            background: rgba(213,143,143,.07);
+            border: 1px solid rgba(213,143,143,.12);
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
             font-size: 12px;
-            text-align: left;
+            font-weight: 600;
             transition: .2s;
         }
 
-        .logout-btn:hover {
-            background: var(--danger-bg);
+        .sidebar-bottom .kh-logout-trigger:hover {
+            color: #E5AAAA;
+            background: rgba(213,143,143,.15);
+            border-color: rgba(213,143,143,.25);
+        }
+
+        .sidebar-bottom .kh-logout-trigger i {
+            font-size: 16px;
+            flex-shrink: 0;
         }
 
         .main {
@@ -970,13 +986,9 @@
                 </div>
             </div>
 
-            <form action="{{ route('logout') }}" method="POST" onsubmit="return confirm('Apakah kamu yakin ingin keluar dari akun?')">
-                @csrf
-                <button class="logout-btn" type="submit">
-                    <i class="bi bi-box-arrow-left"></i>
-                    Keluar dari akun
-                </button>
-            </form>
+            <div class="kh-logout-component-wrapper">
+                @include('components.logout-modal')
+            </div>
         </div>
     </aside>
 
@@ -1635,6 +1647,13 @@
 
             document.addEventListener('keydown', event => {
                 if (event.key === 'Escape') {
+                    const logoutModal = document.getElementById('khLogoutModal');
+
+                    // Jangan ganggu popup logout yang sedang terbuka.
+                    if (logoutModal && logoutModal.classList.contains('is-visible')) {
+                        return;
+                    }
+
                     if (detailModal.classList.contains('show')) {
                         closeDetail();
                     }

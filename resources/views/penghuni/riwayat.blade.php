@@ -223,24 +223,41 @@
             font-size: 10px;
         }
 
-        .logout {
+        .logout-component-wrapper {
             width: 100%;
-            border: none;
-            background: transparent;
-            color: var(--muted);
-            text-align: left;
-            padding: 12px 14px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 13px;
-            border-radius: 7px;
-            transition: .2s;
+            margin-top: 3px;
         }
 
-        .logout:hover {
-            background: rgba(213,143,143,.1);
+        .logout-component-wrapper .kh-logout-trigger {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 12px 14px;
+            color: #AEB7C0;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            text-align: left;
+            transition: background-color .15s ease, color .15s ease;
+        }
+
+        .logout-component-wrapper .kh-logout-trigger:hover {
             color: var(--danger);
+            background: rgba(213,143,143,.1);
+            border-color: rgba(213,143,143,.12);
+        }
+
+        .logout-component-wrapper .kh-logout-trigger i,
+        .logout-component-wrapper .kh-logout-trigger svg {
+            width: 17px;
+            height: 17px;
+            font-size: 17px;
+            flex-shrink: 0;
         }
 
         .sidebar-overlay {
@@ -1375,13 +1392,9 @@
                 </div>
             </div>
 
-            <form action="{{ route('logout') }}" method="POST" onsubmit="return confirm('Apakah kamu yakin ingin keluar dari akun?')">
-                @csrf
-                <button class="logout" type="submit">
-                    <i class="bi bi-box-arrow-left"></i>
-                    Keluar
-                </button>
-            </form>
+            <div class="logout-component-wrapper">
+                @include('components.logout-modal')
+            </div>
 
         </div>
 
@@ -1750,6 +1763,13 @@
 
         document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape') {
+                const logoutModal = document.getElementById('khLogoutModal');
+
+                // Biarkan komponen logout menangani Escape sendiri.
+                if (logoutModal && logoutModal.classList.contains('is-visible')) {
+                    return;
+                }
+
                 closeSidebar();
                 closeModal();
             }
@@ -1773,16 +1793,6 @@
                 }
             }
         });
-
-        /* ==========================================
-           LOGOUT
-        ========================================== */
-
-        function logoutDemo() {
-            if (confirm('Apakah kamu yakin ingin keluar dari dashboard?')) {
-                window.location.href = "{{ route('login') }}";
-            }
-        }
 
         /* ==========================================
            TOAST

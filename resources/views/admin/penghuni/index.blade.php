@@ -1276,6 +1276,41 @@
                 transition-duration: .01ms !important;
             }
         }
+
+        /* LOGOUT MODAL - SIDEBAR DATA PENGHUNI */
+        .sidebar-bottom .kh-logout-component-wrapper {
+            width: 100%;
+            margin-top: 0;
+        }
+
+        .sidebar-bottom .kh-logout-trigger {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 11px;
+            padding: 11px 12px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            background: rgba(255,255,255,.06);
+            color: rgba(241,240,236,.75);
+            text-align: left;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 11px;
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        .sidebar-bottom .kh-logout-trigger:hover {
+            background: rgba(213,143,143,.1);
+            border-color: rgba(213,143,143,.2);
+            color: var(--red);
+        }
+
+        .sidebar-bottom .kh-logout-trigger i {
+            font-size: 15px;
+            flex-shrink: 0;
+        }
     </style>
 </head>
 
@@ -1376,15 +1411,9 @@
                 </div>
             </div>
 
-            <form action="{{ route('logout') }}" method="POST"
-                  onsubmit="return confirm('Yakin ingin keluar dari halaman admin?')">
-                @csrf
-
-                <button type="submit" class="logout-link">
-                    <i class="bi bi-box-arrow-right"></i>
-                    Keluar
-                </button>
-            </form>
+            <div class="kh-logout-component-wrapper">
+                @include('components.logout-modal')
+            </div>
 
         </div>
 

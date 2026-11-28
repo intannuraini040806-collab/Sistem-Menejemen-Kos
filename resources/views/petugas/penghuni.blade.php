@@ -205,22 +205,39 @@ select:focus-visible {
     font-size:10px;
 }
 
-.logout {
-    display:flex;
-    gap:10px;
-    align-items:center;
-    width:100%;
-    padding:12px;
-    border:0;
-    background:transparent;
-    color:#D58F8F;
-    font-size:12px;
-    border-radius:9px;
-    transition:.2s;
+/* SHARED LOGOUT COMPONENT */
+
+.sidebar-bottom .kh-logout-component-wrapper {
+    width: 100%;
+    margin-top: 0;
 }
 
-.logout:hover {
-    background:rgba(213,143,143,.09);
+.sidebar-bottom .kh-logout-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    color: #D58F8F;
+    background: rgba(213,143,143,.07);
+    border: 1px solid rgba(213,143,143,.12);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    transition: .2s;
+}
+
+.sidebar-bottom .kh-logout-trigger:hover {
+    color: #E5AAAA;
+    background: rgba(213,143,143,.15);
+    border-color: rgba(213,143,143,.25);
+}
+
+.sidebar-bottom .kh-logout-trigger i {
+    font-size: 16px;
+    flex-shrink: 0;
 }
 
 /* MAIN */
@@ -1106,9 +1123,9 @@ tbody tr:hover {
             </div>
         </div>
 
-        <button class="logout" type="button" onclick="logout()">
-            <i class="bi bi-box-arrow-left"></i> Keluar
-        </button>
+        <div class="kh-logout-component-wrapper">
+            @include('components.logout-modal')
+        </div>
     </div>
 </aside>
 
@@ -2076,16 +2093,6 @@ document.querySelectorAll('.modal').forEach(modal => {
 });
 
 /* =====================================
-   LOGOUT
-===================================== */
-
-function logout() {
-    if (confirm('Apakah kamu yakin ingin keluar dari akun Petugas?')) {
-        window.location.href = "{{ url('/login') }}";
-    }
-}
-
-/* =====================================
    SIDEBAR RESPONSIF
 ===================================== */
 
@@ -2131,8 +2138,15 @@ sidebar.querySelectorAll('.nav-link').forEach(link => {
     });
 });
 
-document.addEventListener('keydown',event => {
+document.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
+        const logoutModal = document.getElementById('khLogoutModal');
+
+        // Jangan ganggu modal logout yang sedang terbuka.
+        if (logoutModal && logoutModal.classList.contains('is-visible')) {
+            return;
+        }
+
         closeSidebar();
 
         document.querySelectorAll('.modal.show').forEach(modal => {

@@ -887,6 +887,32 @@
                 scroll-behavior: auto !important;
             }
         }
+
+        .sidebar-bottom .kh-logout-component-wrapper {
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .sidebar-bottom .kh-logout-trigger {
+            width: 100%;
+            justify-content: flex-start;
+            padding: 13px 14px;
+            gap: 14px;
+            color: var(--muted);
+            background: transparent;
+            border: 1px solid transparent;
+            font-size: 13px;
+        }
+
+        .sidebar-bottom .kh-logout-trigger:hover {
+            color: var(--danger);
+            background: rgba(213,143,143,.10);
+            border-color: transparent;
+        }
+
+        .sidebar-bottom .kh-logout-trigger i {
+            font-size: 18px;
+        }
     </style>
 </head>
 
@@ -984,17 +1010,9 @@
                 </div>
             </div>
 
-            <form action="{{ route('logout') }}"
-                  method="POST"
-                  class="logout-form"
-                  onsubmit="return confirm('Yakin ingin keluar dari akun?')">
-                @csrf
-
-                <button type="submit" class="logout-button">
-                    <i class="bi bi-box-arrow-left"></i>
-                    <span>Keluar</span>
-                </button>
-            </form>
+            <div class="kh-logout-component-wrapper">
+                @include('components.logout-modal')
+            </div>
         </div>
     </aside>
 

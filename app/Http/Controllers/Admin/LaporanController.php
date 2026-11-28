@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class LaporanController extends Controller
 {
@@ -49,7 +50,7 @@ class LaporanController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | 2. MENENTUKAN RENTANG TANGGAL LAPORAN
+        | 2. RENTANG TANGGAL LAPORAN
         |--------------------------------------------------------------------------
         */
 
@@ -61,45 +62,48 @@ class LaporanController extends Controller
             ? Carbon::create($tahun, 12, 31)->endOfDay()
             : Carbon::create($tahun, (int) $bulan, 1)->endOfMonth();
 
+        $hariIni = Carbon::today();
+
         /*
         |--------------------------------------------------------------------------
-        | 3. DATA TAGIHAN
+        | 3. RINGKASAN TAGIHAN - MENGIKUTI DASHBOARD ADMIN
         |--------------------------------------------------------------------------
+        |
+        | Seluruh tagihan dihitung tanpa filter bulan atau tahun,
+        | sama seperti AdminDashboardController.
+        |
+        | Status ditentukan dari:
+        | - Total pembayaran yang disetujui.
+        | - Total pembayaran yang menunggu verifikasi.
+        | - Jumlah tagihan dan denda.
+        | - Tanggal jatuh tempo.
+        |
         */
 
-        $periodeQuery = DB::table('tagihans');
+        $semuaTagihan = $this->ambilDataTagihan();
 
-        if ($bulan === 'all') {
-            $periodeQuery->where(
-                'periode',
-                'like',
-                $tahun . '-%'
-            );
-        } else {
-            $periodeQuery->where(
-                'periode',
-                $tahun . '-' . $bulan
-            );
-        }
+        $totalTagihan = $semuaTagihan->count();
 
-        $totalTagihan = (clone $periodeQuery)->count();
-
-        // Tagihan yang sudah lunas.
-        $tagihanLunas = (clone $periodeQuery)
-            ->where('status', 'lunas')
+        $tagihanLunas = $semuaTagihan
+            ->where('status_tampilan', 'lunas')
             ->count();
 
-        // Tagihan yang belum dibayar atau menunggu verifikasi.
-        $tagihanTertunda = (clone $periodeQuery)
-            ->whereIn('status', [
+        $tagihanTerlambat = $semuaTagihan
+            ->where('status_tampilan', 'terlambat')
+            ->count();
+
+        $tagihanTertunda = $semuaTagihan
+            ->whereIn('status_tampilan', [
                 'belum_dibayar',
-                'menunggu_verifikasi'
+                'menunggu_verifikasi',
+                'dibayar_sebagian',
             ])
             ->count();
 
-        // Tagihan yang terlambat.
-        $tagihanTerlambat = (clone $periodeQuery)
-            ->where('status', 'terlambat')
+        // Total tagihan belum lunas harus sama dengan Dashboard Admin.
+        // Termasuk tagihan tertunda dan tagihan terlambat.
+        $totalTagihanBelumLunas = $semuaTagihan
+            ->where('status_tampilan', '!=', 'lunas')
             ->count();
 
         /*
@@ -107,11 +111,11 @@ class LaporanController extends Controller
         | 4. DATA PEMBAYARAN
         |--------------------------------------------------------------------------
         |
-        | Menggunakan nama kolom asli database:
-        | - metode_pembayaran
-        | - jumlah_bayar
-        | - tanggal_pembayaran
-        | - bukti_pembayaran
+        | Total pendapatan mengikuti Dashboard Admin:
+        | seluruh pembayaran dengan status disetujui.
+        |
+        | Statistik jumlah transaksi lainnya tetap mengikuti
+        | filter bulan dan tahun yang dipilih.
         |
         */
 
@@ -120,24 +124,25 @@ class LaporanController extends Controller
                 'DATE(COALESCE(tanggal_pembayaran, created_at)) BETWEEN ? AND ?',
                 [
                     $tanggalMulai->toDateString(),
-                    $tanggalAkhir->toDateString()
+                    $tanggalAkhir->toDateString(),
                 ]
             );
 
-        // Pendapatan hanya dihitung dari pembayaran yang disetujui.
-        $totalPendapatan = (clone $pembayaranQuery)
+        // Sama persis dengan perhitungan pendapatan Dashboard Admin.
+        $totalPendapatan = DB::table('pembayarans')
             ->where('status', 'disetujui')
             ->sum('jumlah_bayar');
 
-        // Total seluruh transaksi pembayaran.
         $totalPembayaran = (clone $pembayaranQuery)->count();
 
-        // Pembayaran yang menunggu verifikasi.
+        $jumlahTerverifikasi = (clone $pembayaranQuery)
+            ->where('status', 'disetujui')
+            ->count();
+
         $pembayaranMenunggu = (clone $pembayaranQuery)
             ->where('status', 'menunggu_verifikasi')
             ->count();
 
-        // Pembayaran yang ditolak.
         $pembayaranDitolak = (clone $pembayaranQuery)
             ->where('status', 'ditolak')
             ->count();
@@ -166,12 +171,27 @@ class LaporanController extends Controller
         |--------------------------------------------------------------------------
         | 6. DATA PENGHUNI AKTIF
         |--------------------------------------------------------------------------
+        |
+        | Mengikuti perhitungan Dashboard Admin:
+        | - Booking disetujui.
+        | - Kamar berstatus terisi.
+        | - Tanggal masuk sudah berlaku.
+        | - Tanggal keluar belum lewat.
+        | - Menghitung berdasarkan ID booking.
+        |
         */
 
-        $totalPenghuniAktif = DB::table('bookings')
-            ->where('status', 'disetujui')
+        $totalPenghuniAktif = DB::table('bookings as b')
+            ->join('kamars as k', 'k.id', '=', 'b.kamar_id')
+            ->where('b.status', 'disetujui')
+            ->where('k.status', 'terisi')
+            ->whereDate('b.tanggal_masuk', '<=', $hariIni)
+            ->where(function ($query) use ($hariIni) {
+                $query->whereNull('b.tanggal_keluar')
+                    ->orWhereDate('b.tanggal_keluar', '>=', $hariIni);
+            })
             ->distinct()
-            ->count('user_id');
+            ->count('b.id');
 
         /*
         |--------------------------------------------------------------------------
@@ -195,6 +215,9 @@ class LaporanController extends Controller
         |--------------------------------------------------------------------------
         | 8. RIWAYAT TRANSAKSI PEMBAYARAN
         |--------------------------------------------------------------------------
+        |
+        | Riwayat tetap mengikuti filter bulan dan tahun.
+        |
         */
 
         $pembayaran = DB::table('pembayarans')
@@ -226,14 +249,14 @@ class LaporanController extends Controller
                 'DATE(COALESCE(pembayarans.tanggal_pembayaran, pembayarans.created_at)) BETWEEN ? AND ?',
                 [
                     $tanggalMulai->toDateString(),
-                    $tanggalAkhir->toDateString()
+                    $tanggalAkhir->toDateString(),
                 ]
             )
             ->select(
                 'pembayarans.id',
                 'users.name as nama_penghuni',
                 'kamars.nomor_kamar',
-                'pembayarans.metode_pembayaran',
+                'pembayarans.metode_pembayaran as metode',
                 'pembayarans.jumlah_bayar',
                 'pembayarans.status',
                 'pembayarans.tanggal_pembayaran',
@@ -246,6 +269,7 @@ class LaporanController extends Controller
             ->orderByRaw(
                 'COALESCE(pembayarans.tanggal_pembayaran, pembayarans.created_at) DESC'
             )
+            ->orderByDesc('pembayarans.id')
             ->limit(200)
             ->get();
 
@@ -254,8 +278,8 @@ class LaporanController extends Controller
         | 9. DATA GRAFIK PENDAPATAN
         |--------------------------------------------------------------------------
         |
-        | Grafik hanya menghitung pembayaran yang disetujui.
-        | Jika tanggal_pembayaran kosong, created_at digunakan.
+        | Grafik tetap mengikuti periode yang dipilih.
+        | Hanya pembayaran disetujui yang dihitung.
         |
         */
 
@@ -265,7 +289,7 @@ class LaporanController extends Controller
                 'DATE(COALESCE(tanggal_pembayaran, created_at)) BETWEEN ? AND ?',
                 [
                     $tanggalMulai->toDateString(),
-                    $tanggalAkhir->toDateString()
+                    $tanggalAkhir->toDateString(),
                 ]
             )
             ->selectRaw(
@@ -280,32 +304,18 @@ class LaporanController extends Controller
         $chartData = [];
 
         if ($bulan === 'all') {
-
-            // Grafik pendapatan Januari sampai Desember.
             $namaBulan = [
-                'Jan',
-                'Feb',
-                'Mar',
-                'Apr',
-                'Mei',
-                'Jun',
-                'Jul',
-                'Agu',
-                'Sep',
-                'Okt',
-                'Nov',
-                'Des'
+                'Jan', 'Feb', 'Mar', 'Apr',
+                'Mei', 'Jun', 'Jul', 'Agu',
+                'Sep', 'Okt', 'Nov', 'Des',
             ];
 
             $chartLabels = $namaBulan;
-
-            // Siapkan nilai awal setiap bulan.
             $pendapatanBulanan = array_fill(1, 12, 0);
 
             foreach ($dataGrafik as $item) {
-                $tanggal = Carbon::parse($item->tanggal);
-
-                $nomorBulan = (int) $tanggal->format('n');
+                $nomorBulan = (int) Carbon::parse($item->tanggal)
+                    ->format('n');
 
                 $pendapatanBulanan[$nomorBulan] += (int) $item->total;
             }
@@ -313,21 +323,15 @@ class LaporanController extends Controller
             foreach (range(1, 12) as $nomorBulan) {
                 $chartData[] = $pendapatanBulanan[$nomorBulan];
             }
-
         } else {
-
-            // Grafik pendapatan berdasarkan tanggal dalam satu bulan.
             $jumlahHari = $tanggalMulai->daysInMonth;
 
             $chartLabels = range(1, $jumlahHari);
-
-            // Siapkan nilai awal setiap tanggal.
             $pendapatanHarian = array_fill(1, $jumlahHari, 0);
 
             foreach ($dataGrafik as $item) {
-                $tanggal = Carbon::parse($item->tanggal);
-
-                $nomorHari = (int) $tanggal->format('j');
+                $nomorHari = (int) Carbon::parse($item->tanggal)
+                    ->format('j');
 
                 $pendapatanHarian[$nomorHari] += (int) $item->total;
             }
@@ -359,38 +363,124 @@ class LaporanController extends Controller
             'bulan',
             'periodeLabel',
 
-            // Data tagihan.
             'totalTagihan',
+            'totalTagihanBelumLunas',
             'tagihanLunas',
             'tagihanTertunda',
             'tagihanTerlambat',
 
-            // Data pembayaran.
             'totalPendapatan',
             'totalPembayaran',
+            'jumlahTerverifikasi',
             'pembayaranMenunggu',
             'pembayaranDitolak',
 
-            // Data kamar.
             'totalKamar',
             'kamarTerisi',
             'kamarTersedia',
             'kamarMaintenance',
 
-            // Data penghuni.
             'totalPenghuniAktif',
 
-            // Persentase.
             'persentaseLunas',
             'persentaseTertunda',
             'persentaseTerlambat',
 
-            // Riwayat pembayaran.
             'pembayaran',
 
-            // Grafik.
             'chartLabels',
             'chartData'
         ));
+    }
+
+    /**
+     * Mengambil seluruh tagihan dengan aturan yang sama
+     * seperti AdminDashboardController.
+     */
+    private function ambilDataTagihan(): Collection
+    {
+        $pembayaranDisetujui = DB::table('pembayarans')
+            ->select('tagihan_id')
+            ->selectRaw('SUM(jumlah_bayar) as total_terbayar')
+            ->where('status', 'disetujui')
+            ->groupBy('tagihan_id');
+
+        $pembayaranMenunggu = DB::table('pembayarans')
+            ->select('tagihan_id')
+            ->selectRaw('COUNT(*) as jumlah_menunggu')
+            ->where('status', 'menunggu_verifikasi')
+            ->groupBy('tagihan_id');
+
+        return DB::table('tagihans as t')
+            ->leftJoinSub($pembayaranDisetujui, 'pd', function ($join) {
+                $join->on('pd.tagihan_id', '=', 't.id');
+            })
+            ->leftJoinSub($pembayaranMenunggu, 'pm', function ($join) {
+                $join->on('pm.tagihan_id', '=', 't.id');
+            })
+            ->select(
+                't.id',
+                't.jumlah',
+                't.denda',
+                't.status',
+                't.tanggal_terbit',
+                't.tanggal_jatuh_tempo'
+            )
+            ->selectRaw('COALESCE(pd.total_terbayar, 0) as total_terbayar')
+            ->selectRaw('COALESCE(pm.jumlah_menunggu, 0) as jumlah_menunggu')
+            ->get()
+            ->map(function ($tagihan) {
+                $tagihan->status_tampilan = $this->tentukanStatusTagihan(
+                    $tagihan
+                );
+
+                return $tagihan;
+            });
+    }
+
+    /**
+     * Menentukan status tagihan dengan aturan yang sama
+     * seperti AdminDashboardController.
+     */
+    private function tentukanStatusTagihan(object $tagihan): string
+    {
+        $totalKewajiban = (int) $tagihan->jumlah
+            + (int) $tagihan->denda;
+
+        $totalTerbayar = (int) $tagihan->total_terbayar;
+
+        $sisaTagihan = max(0, $totalKewajiban - $totalTerbayar);
+
+        // 1. Lunas jika pembayaran disetujui sudah mencukupi kewajiban.
+        if (
+            $totalKewajiban > 0 &&
+            $totalTerbayar >= $totalKewajiban
+        ) {
+            return 'lunas';
+        }
+
+        // 2. Menunggu verifikasi jika ada pembayaran yang menunggu.
+        if ((int) $tagihan->jumlah_menunggu > 0) {
+            return 'menunggu_verifikasi';
+        }
+
+        // 3. Terlambat jika masih ada kewajiban dan jatuh tempo lewat.
+        if (
+            $sisaTagihan > 0 &&
+            !empty($tagihan->tanggal_jatuh_tempo) &&
+            Carbon::parse($tagihan->tanggal_jatuh_tempo)
+                ->startOfDay()
+                ->lt(Carbon::today())
+        ) {
+            return 'terlambat';
+        }
+
+        // 4. Dibayar sebagian jika sudah ada pembayaran disetujui.
+        if ($totalTerbayar > 0) {
+            return 'dibayar_sebagian';
+        }
+
+        // 5. Belum dibayar.
+        return 'belum_dibayar';
     }
 }

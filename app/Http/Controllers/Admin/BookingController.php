@@ -32,6 +32,10 @@ class BookingController extends Controller
             ],
         ]);
 
+        // ==========================================
+        // QUERY TABEL BOOKING
+        // ==========================================
+
         $query = Booking::with(['user', 'kamar'])
             ->latest('created_at');
 
@@ -56,25 +60,88 @@ class BookingController extends Controller
             $query->where('status', $request->input('status'));
         }
 
-        // Statistik seluruh booking.
-        $totalBooking = Booking::count();
+        // ==========================================
+        // STATISTIK BOOKING LANGSUNG DARI DATABASE
+        // ==========================================
 
-        $waitingBooking = Booking::where('status', 'menunggu')->count();
+        // Query ini tidak menggunakan filter pencarian,
+        // pagination, maupun filter status tabel.
+        $statistikBooking = DB::table('bookings')
+            ->selectRaw('COUNT(*) AS total_booking')
 
-        $approvedBooking = Booking::where('status', 'disetujui')->count();
+            ->selectRaw("
+                COUNT(
+                    CASE
+                        WHEN LOWER(TRIM(COALESCE(status, ''))) = 'menunggu'
+                        THEN 1
+                    END
+                ) AS waiting_booking
+            ")
 
-        $rejectedBooking = Booking::where('status', 'ditolak')->count();
+            ->selectRaw("
+                COUNT(
+                    CASE
+                        WHEN LOWER(TRIM(COALESCE(status, ''))) = 'disetujui'
+                        THEN 1
+                    END
+                ) AS approved_booking
+            ")
 
-        $cancelledBooking = Booking::where('status', 'dibatalkan')->count();
+            ->selectRaw("
+                COUNT(
+                    CASE
+                        WHEN LOWER(TRIM(COALESCE(status, ''))) = 'ditolak'
+                        THEN 1
+                    END
+                ) AS rejected_booking
+            ")
 
-        $completedBooking = Booking::where('status', 'selesai')->count();
+            ->selectRaw("
+                COUNT(
+                    CASE
+                        WHEN LOWER(TRIM(COALESCE(status, ''))) = 'dibatalkan'
+                        THEN 1
+                    END
+                ) AS cancelled_booking
+            ")
 
-        // Data kamar dan akun penghuni untuk formulir tambah booking.
+            ->selectRaw("
+                COUNT(
+                    CASE
+                        WHEN LOWER(TRIM(COALESCE(status, ''))) = 'selesai'
+                        THEN 1
+                    END
+                ) AS completed_booking
+            ")
+
+            ->first();
+
+        // Konversi hasil database menjadi integer.
+        $totalBooking = (int) ($statistikBooking->total_booking ?? 0);
+
+        $waitingBooking = (int) ($statistikBooking->waiting_booking ?? 0);
+
+        $approvedBooking = (int) ($statistikBooking->approved_booking ?? 0);
+
+        $rejectedBooking = (int) ($statistikBooking->rejected_booking ?? 0);
+
+        $cancelledBooking = (int) ($statistikBooking->cancelled_booking ?? 0);
+
+        $completedBooking = (int) ($statistikBooking->completed_booking ?? 0);
+
+        // ==========================================
+        // DATA KAMAR DAN PENGHUNI
+        // ==========================================
+
         $kamars = Kamar::orderBy('nomor_kamar')->get();
 
         $penghunis = User::where('role', 'penghuni')
             ->orderBy('name')
             ->get();
+
+        // ==========================================
+        // DATA TABEL BOOKING
+        // ==========================================
 
         $bookings = $query->paginate(10)->withQueryString();
 
@@ -200,7 +267,8 @@ class BookingController extends Controller
                 ];
             }
 
-            // Booking menunggu juga diperhitungkan agar kapasitas tidak berlebih.
+            // Booking menunggu juga diperhitungkan
+            // agar kapasitas kamar tidak berlebih.
             $bookingMenunggu = Booking::where('kamar_id', $kamar->id)
                 ->where('status', 'menunggu')
                 ->count();
@@ -299,7 +367,6 @@ class BookingController extends Controller
                 - $kamar->jumlah_penghuni
                 - $bookingMenungguLain;
 
-            // Perbaikan: kapasitas 0 juga berarti tidak tersedia.
             if ($sisaKapasitas <= 0) {
                 return [
                     'success' => false,

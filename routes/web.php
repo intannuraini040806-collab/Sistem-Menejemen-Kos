@@ -30,6 +30,7 @@ use App\Http\Controllers\Admin\AnnouncementController;
 // ==========================================
 
 use App\Http\Controllers\Penghuni\DashboardController;
+use App\Http\Controllers\Penghuni\NotificationController;
 use App\Http\Controllers\Penghuni\KamarController as PenghuniKamarController;
 use App\Http\Controllers\Penghuni\RiwayatPembayaranController;
 use App\Http\Controllers\Penghuni\TagihanController as PenghuniTagihanController;
@@ -328,12 +329,28 @@ Route::middleware(['auth', 'role:penghuni'])
         Route::get('/dashboard', [DashboardController::class, 'index'])
             ->name('dashboard');
 
+        Route::get('/notifications', [NotificationController::class, 'index'])
+            ->name('notifications.index');
+
+        Route::patch('/notifications/{id}/read', [NotificationController::class, 'read'])
+            ->name('notifications.read');
+
+        Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])
+            ->name('notifications.read-all');
+
         Route::get('/kamar', [PenghuniKamarController::class, 'index'])
             ->name('kamar.index');
 
         Route::post('/kamar/booking', [PenghuniKamarController::class, 'store'])
             ->middleware('throttle:5,1')
             ->name('kamar.booking.store');
+
+        Route::post('/kamar/booking/{booking}/bayar-dp', [
+            PenghuniKamarController::class,
+            'bayarDp'
+        ])
+            ->middleware('throttle:5,1')
+            ->name('kamar.booking.bayar-dp');
 
         Route::get('/tagihan', [PenghuniTagihanController::class, 'index'])
             ->name('tagihan.index');

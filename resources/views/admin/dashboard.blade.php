@@ -236,22 +236,37 @@
             font-size: 11px;
         }
 
-        .logout-button {
+        /* SHARED LOGOUT COMPONENT */
+        .sidebar-bottom .kh-logout-component-wrapper {
+            width: 100%;
+            margin-top: 0;
+        }
+
+        .sidebar-bottom .kh-logout-trigger {
             width: 100%;
             display: flex;
             align-items: center;
+            justify-content: flex-start;
             gap: 12px;
             padding: 12px 14px;
             color: #D58F8F;
             background: rgba(213,143,143,.07);
             border: 1px solid rgba(213,143,143,.12);
             border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
             font-size: 12px;
-            transition: background-color .2s ease, border-color .2s ease;
+            font-weight: 600;
         }
 
-        .logout-button:hover {
+        .sidebar-bottom .kh-logout-trigger:hover {
+            color: #E5AAAA;
             background: rgba(213,143,143,.15);
+            border-color: rgba(213,143,143,.25);
+        }
+
+        .sidebar-bottom .kh-logout-trigger i {
+            font-size: 16px;
+            flex-shrink: 0;
         }
 
         /* MAIN CONTENT */
@@ -1288,16 +1303,9 @@
                 <i class="bi bi-three-dots-vertical" style="color:var(--muted-dark)"></i>
             </div>
 
-            <form action="{{ route('logout') }}" method="POST"
-                  onsubmit="return confirm('Apakah kamu yakin ingin keluar?')">
-                @csrf
-
-                <button type="submit" class="logout-button">
-                    <i class="bi bi-box-arrow-left"></i>
-                    Keluar dari akun
-                </button>
-            </form>
-
+            <div class="kh-logout-component-wrapper">
+                @include('components.logout-modal')
+            </div>
         </div>
 
     </aside>

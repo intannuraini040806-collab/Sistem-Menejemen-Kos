@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -2472,6 +2471,7 @@
                         $roomData = [
                             'id' => $kamar->id,
                             'nomor' => $kamar->nomor_kamar,
+                            'lantai' => $kamar->lantai,
                             'tipe' => $kamar->tipe,
                             'tipe_label' => $tipeLabel,
                             'harga' => $kamar->harga,
@@ -2514,6 +2514,8 @@
                             <p class="room-location">
                                 <i class="bi bi-door-closed"></i>
                                 Nomor kamar: {{ $kamar->nomor_kamar }}
+                                <span aria-hidden="true">&bull;</span>
+                                Lantai: {{ $kamar->lantai ?? '-' }}
                             </p>
 
                             <div class="room-facilities">
@@ -3522,6 +3524,7 @@
 
                 informationContainer.append(
                     createRoomInformation('Nomor kamar', room.nomor || '-'),
+                    createRoomInformation('Lantai', room.lantai ?? '-'),
                     createRoomInformation('Kapasitas', room.kapasitas + ' orang'),
                     createRoomInformation('Penghuni saat ini', room.jumlah_penghuni + ' orang'),
                     createRoomInformation(

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Kamar extends Model
 {
@@ -67,20 +68,30 @@ class Kamar extends Model
         $this->save();
     }
 
+    /**
+     * Relasi booking.
+     */
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
     }
 
-
-    public function facilities(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    /**
+     * Relasi fasilitas.
+     */
+    public function facilities(): BelongsToMany
     {
-        return $this->belongsToMany(Facility::class, 'facility_kamar');
+        return $this->belongsToMany(
+            Facility::class,
+            'facility_kamar'
+        );
     }
 
-    public function contracts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    /**
+     * Relasi kontrak.
+     */
+    public function contracts(): HasMany
     {
         return $this->hasMany(Contract::class);
     }
-    
 }

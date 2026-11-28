@@ -7,8 +7,10 @@ use App\Models\Facility;
 use App\Models\Kamar;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 class KamarController extends Controller
 {
@@ -21,7 +23,7 @@ class KamarController extends Controller
     }
 
     /**
-     * Mengambil seluruh data kamar untuk AJAX (mendukung filter lantai & tipe).
+     * Mengambil seluruh data kamar untuk AJAX.
      */
     public function data(Request $request)
     {
@@ -63,31 +65,70 @@ class KamarController extends Controller
         );
 
         $fotoPath = null;
+
+        // Simpan foto terlebih dahulu.
         if ($request->hasFile('foto')) {
             $fotoPath = $request->file('foto')->store('kamar', 'public');
+
+            if (!$fotoPath) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Foto kamar gagal disimpan.',
+                ], 500);
+            }
         }
 
-        $kamar = Kamar::create([
-            'nomor_kamar' => strtoupper($validated['nomor_kamar']),
-            'lantai' => (int) ($validated['lantai'] ?? $this->deteksiLantaiDariNomor($validated['nomor_kamar'])),
-            'tipe' => $validated['tipe'],
-            'harga' => $validated['harga'],
-            'kapasitas' => $kapasitas,
-            'jumlah_penghuni' => $validated['jumlah_penghuni'],
-            'jenis_kamar_mandi' => $validated['jenis_kamar_mandi'],
-            'status' => $status,
-            'fasilitas' => $validated['fasilitas'] ?? [],
-            'deskripsi' => $validated['deskripsi'] ?? null,
-            'foto' => $fotoPath,
-        ]);
+        try {
+            $kamar = DB::transaction(function () use (
+                $validated,
+                $kapasitas,
+                $status,
+                $fotoPath
+            ) {
+                $kamar = Kamar::create([
+                    'nomor_kamar' => strtoupper($validated['nomor_kamar']),
+                    'lantai' => (int) (
+                        $validated['lantai']
+                        ?? $this->deteksiLantaiDariNomor($validated['nomor_kamar'])
+                    ),
+                    'tipe' => $validated['tipe'],
+                    'harga' => $validated['harga'],
+                    'kapasitas' => $kapasitas,
+                    'jumlah_penghuni' => $validated['jumlah_penghuni'],
+                    'jenis_kamar_mandi' => $validated['jenis_kamar_mandi'],
+                    'status' => $status,
+                    'fasilitas' => $validated['fasilitas'] ?? [],
+                    'deskripsi' => $validated['deskripsi'] ?? null,
+                    'foto' => $fotoPath,
+                ]);
 
-        $this->sinkronkanFasilitasPivot($kamar, $validated['fasilitas'] ?? []);
+                $this->sinkronkanFasilitasPivot(
+                    $kamar,
+                    $validated['fasilitas'] ?? []
+                );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Kamar berhasil ditambahkan.',
-            'data' => $this->formatKamar($kamar->fresh('facilities')),
-        ], 201);
+                return $kamar;
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Kamar berhasil ditambahkan.',
+                'data' => $this->formatKamar($kamar->fresh('facilities')),
+            ], 201);
+
+        } catch (Throwable $e) {
+            // Bersihkan foto jika penyimpanan database gagal.
+            if ($fotoPath) {
+                Storage::disk('public')->delete($fotoPath);
+            }
+
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Kamar gagal disimpan. Silakan coba kembali.',
+            ], 500);
+        }
     }
 
     /**
@@ -105,35 +146,86 @@ class KamarController extends Controller
             $kapasitas
         );
 
-        $fotoPath = $kamar->foto;
+        $fotoLama = $kamar->foto;
+        $fotoBaru = null;
+
+        // Foto lama tidak dihapus sebelum foto baru berhasil disimpan.
         if ($request->hasFile('foto')) {
-            if ($kamar->foto && Storage::disk('public')->exists($kamar->foto)) {
-                Storage::disk('public')->delete($kamar->foto);
+            $fotoBaru = $request->file('foto')->store('kamar', 'public');
+
+            if (!$fotoBaru) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Foto kamar baru gagal disimpan.',
+                ], 500);
             }
-            $fotoPath = $request->file('foto')->store('kamar', 'public');
         }
 
-        $kamar->update([
-            'nomor_kamar' => strtoupper($validated['nomor_kamar']),
-            'lantai' => (int) ($validated['lantai'] ?? $kamar->lantai ?? $this->deteksiLantaiDariNomor($validated['nomor_kamar'])),
-            'tipe' => $validated['tipe'],
-            'harga' => $validated['harga'],
-            'kapasitas' => $kapasitas,
-            'jumlah_penghuni' => $validated['jumlah_penghuni'],
-            'jenis_kamar_mandi' => $validated['jenis_kamar_mandi'],
-            'status' => $status,
-            'fasilitas' => $validated['fasilitas'] ?? [],
-            'deskripsi' => $validated['deskripsi'] ?? null,
-            'foto' => $fotoPath,
-        ]);
+        try {
+            $kamar = DB::transaction(function () use (
+                $kamar,
+                $validated,
+                $kapasitas,
+                $status,
+                $fotoBaru,
+                $fotoLama
+            ) {
+                $kamar->update([
+                    'nomor_kamar' => strtoupper($validated['nomor_kamar']),
+                    'lantai' => (int) (
+                        $validated['lantai']
+                        ?? $kamar->lantai
+                        ?? $this->deteksiLantaiDariNomor($validated['nomor_kamar'])
+                    ),
+                    'tipe' => $validated['tipe'],
+                    'harga' => $validated['harga'],
+                    'kapasitas' => $kapasitas,
+                    'jumlah_penghuni' => $validated['jumlah_penghuni'],
+                    'jenis_kamar_mandi' => $validated['jenis_kamar_mandi'],
+                    'status' => $status,
+                    'fasilitas' => $validated['fasilitas'] ?? [],
+                    'deskripsi' => $validated['deskripsi'] ?? null,
 
-        $this->sinkronkanFasilitasPivot($kamar, $validated['fasilitas'] ?? []);
+                    // Jika tidak ada foto baru, pertahankan foto lama.
+                    'foto' => $fotoBaru ?? $fotoLama,
+                ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Data kamar berhasil diperbarui.',
-            'data' => $this->formatKamar($kamar->fresh('facilities')),
-        ]);
+                $this->sinkronkanFasilitasPivot(
+                    $kamar,
+                    $validated['fasilitas'] ?? []
+                );
+
+                return $kamar;
+            });
+
+            // Hapus foto lama hanya setelah database berhasil diperbarui.
+            if (
+                $fotoBaru
+                && $fotoLama
+                && $fotoLama !== $fotoBaru
+            ) {
+                Storage::disk('public')->delete($fotoLama);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data kamar berhasil diperbarui.',
+                'data' => $this->formatKamar($kamar->fresh('facilities')),
+            ]);
+
+        } catch (Throwable $e) {
+            // Jika database gagal, bersihkan foto baru.
+            if ($fotoBaru) {
+                Storage::disk('public')->delete($fotoBaru);
+            }
+
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Data kamar gagal diperbarui. Silakan coba kembali.',
+            ], 500);
+        }
     }
 
     /**
@@ -141,33 +233,48 @@ class KamarController extends Controller
      */
     public function destroy(Kamar $kamar)
     {
+        $fotoLama = $kamar->foto;
+        $nomorKamar = $kamar->nomor_kamar;
+
         try {
-            $nomorKamar = $kamar->nomor_kamar;
+            DB::transaction(function () use ($kamar) {
+                $kamar->facilities()->detach();
+                $kamar->delete();
+            });
 
-            if ($kamar->foto && Storage::disk('public')->exists($kamar->foto)) {
-                Storage::disk('public')->delete($kamar->foto);
+            // Hapus file hanya jika data kamar berhasil dihapus.
+            if ($fotoLama) {
+                Storage::disk('public')->delete($fotoLama);
             }
-
-            $kamar->facilities()->detach();
-            $kamar->delete();
 
             return response()->json([
                 'success' => true,
                 'message' => "Kamar {$nomorKamar} berhasil dihapus.",
             ]);
+
         } catch (QueryException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Kamar tidak dapat dihapus karena sudah digunakan dalam data booking atau transaksi.',
             ], 422);
+
+        } catch (Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Kamar gagal dihapus. Silakan coba kembali.',
+            ], 500);
         }
     }
 
     /**
      * Validasi data kamar.
      */
-    private function validateKamar(Request $request, ?int $kamarId = null): array
-    {
+    private function validateKamar(
+        Request $request,
+        ?int $kamarId = null
+    ): array {
         $tipe = strtolower($request->input('tipe', ''));
 
         $prefix = match ($tipe) {
@@ -261,7 +368,7 @@ class KamarController extends Controller
         $messages = [
             'nomor_kamar.required' => 'Nomor kamar wajib diisi.',
             'nomor_kamar.unique' => 'Nomor kamar sudah digunakan.',
-            'nomor_kamar.regex' => 'Nomor kamar Single harus diawali A dan Double harus diawali B.',
+            'nomor_kamar.regex' => 'Nomor kamar harus diawali huruf A atau B dan diikuti angka.',
             'nomor_kamar.max' => 'Nomor kamar maksimal 20 karakter.',
 
             'lantai.integer' => 'Lantai harus berupa angka.',
@@ -289,16 +396,21 @@ class KamarController extends Controller
             'fasilitas.*.in' => 'Terdapat fasilitas yang tidak tersedia.',
 
             'deskripsi.max' => 'Deskripsi maksimal 500 karakter.',
+
             'foto.image' => 'File foto kamar harus berupa gambar.',
+            'foto.mimes' => 'Format foto harus JPG, JPEG, PNG, atau WebP.',
             'foto.max' => 'Ukuran foto kamar maksimal 2MB.',
         ];
 
         $validated = $request->validate($rules, $messages);
 
-        if ($prefix && !str_starts_with(
-            strtoupper($validated['nomor_kamar']),
+        if (
             $prefix
-        )) {
+            && !str_starts_with(
+                strtoupper($validated['nomor_kamar']),
+                $prefix
+            )
+        ) {
             abort(response()->json([
                 'success' => false,
                 'message' => "Nomor kamar {$tipe} harus diawali huruf {$prefix}.",
@@ -314,21 +426,25 @@ class KamarController extends Controller
     }
 
     /**
-     * Sinkronkan nama fasilitas ke tabel pivot facility_kamar.
+     * Sinkronkan fasilitas ke tabel pivot facility_kamar.
      */
-    private function sinkronkanFasilitasPivot(Kamar $kamar, array $namaFasilitas): void
-    {
+    private function sinkronkanFasilitasPivot(
+        Kamar $kamar,
+        array $namaFasilitas
+    ): void {
         if (empty($namaFasilitas)) {
             $kamar->facilities()->sync([]);
             return;
         }
 
         $ids = [];
+
         foreach ($namaFasilitas as $nama) {
             $facility = Facility::firstOrCreate(
                 ['nama' => $nama],
                 ['kategori' => 'kamar']
             );
+
             $ids[] = $facility->id;
         }
 
@@ -336,11 +452,11 @@ class KamarController extends Controller
     }
 
     /**
-     * Deteksi otomatis lantai dari nomor kamar jika form belum mengirimkan input lantai
-     * (misal A201 / B201 -> Lantai 2, selain itu -> Lantai 1).
+     * Deteksi otomatis lantai dari nomor kamar.
      */
-    private function deteksiLantaiDariNomor(string $nomorKamar): int
-    {
+    private function deteksiLantaiDariNomor(
+        string $nomorKamar
+    ): int {
         $angka = preg_replace('/[^0-9]/', '', $nomorKamar);
 
         if (strlen($angka) >= 3 && (int) $angka[0] >= 2) {
@@ -380,7 +496,7 @@ class KamarController extends Controller
     }
 
     /**
-     * Mengubah format database menjadi format yang dibaca JavaScript.
+     * Mengubah data database menjadi format untuk JavaScript.
      */
     private function formatKamar(Kamar $kamar): array
     {
@@ -401,24 +517,32 @@ class KamarController extends Controller
             'number' => $kamar->nomor_kamar,
             'floor' => $lantai,
             'floor_label' => "Lantai {$lantai}",
+
             'type' => $kamar->tipe === 'single'
                 ? 'Single'
                 : 'Double',
+
             'capacity' => (int) $kamar->kapasitas,
             'occupants' => (int) $kamar->jumlah_penghuni,
             'price' => (int) $kamar->harga,
+
             'bathroom' => $kamar->jenis_kamar_mandi === 'dalam_kamar'
                 ? 'Dalam Kamar'
                 : 'Bersama',
+
             'status' => match ($kamar->status) {
                 'tersedia' => 'Kosong',
                 'terisi' => 'Terisi',
                 'maintenance' => 'Perbaikan',
                 default => 'Kosong',
             },
+
             'facilities' => array_values($fasilitas),
             'description' => $kamar->deskripsi ?? '',
-            'photo_url' => $kamar->foto ? asset('storage/' . $kamar->foto) : null,
+
+            'photo_url' => $kamar->foto
+                ? '/storage/' . ltrim($kamar->foto, '/')
+                : null,
         ];
     }
 }

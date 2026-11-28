@@ -35,6 +35,8 @@
             --red-bg: rgba(213,143,143,.14);
             --blue: #91B1D2;
             --blue-bg: rgba(145,177,210,.14);
+            --purple: #B99BD2;
+            --purple-bg: rgba(185,155,210,.14);
 
             --shadow: 0 12px 35px rgba(0,0,0,.15);
         }
@@ -400,18 +402,26 @@
         /* STATISTICS */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 13px;
             margin-bottom: 25px;
         }
 
         .stat-card {
+            position: relative;
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 13px;
-            padding: 18px;
+            padding: 17px;
             box-shadow: var(--shadow);
             min-width: 0;
+            overflow: hidden;
+            transition: transform .2s ease, border-color .2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(198,164,119,.4);
         }
 
         .stat-top {
@@ -441,23 +451,49 @@
 
         .stat-card h3 {
             font-size: 25px;
+            font-weight: 800;
             color: var(--white);
             overflow-wrap: anywhere;
+            line-height: 1.2;
         }
 
         .stat-card small {
             display: block;
-            margin-top: 5px;
+            margin-top: 7px;
             color: var(--muted-dark);
             font-size: 9px;
             line-height: 1.5;
         }
 
-        .stat-total .stat-icon { background: var(--primary-light); color: var(--primary-dark); }
-        .stat-paid .stat-icon { background: var(--green-bg); color: var(--green); }
-        .stat-unpaid .stat-icon { background: var(--orange-bg); color: var(--orange); }
-        .stat-pending .stat-icon { background: var(--blue-bg); color: var(--blue); }
-        .stat-late .stat-icon { background: var(--red-bg); color: var(--red); }
+        .stat-total .stat-icon {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        .stat-paid .stat-icon {
+            background: var(--green-bg);
+            color: var(--green);
+        }
+
+        .stat-unpaid .stat-icon {
+            background: var(--orange-bg);
+            color: var(--orange);
+        }
+
+        .stat-pending .stat-icon {
+            background: var(--blue-bg);
+            color: var(--blue);
+        }
+
+        .stat-partial .stat-icon {
+            background: var(--purple-bg);
+            color: var(--purple);
+        }
+
+        .stat-late .stat-icon {
+            background: var(--red-bg);
+            color: var(--red);
+        }
 
         /* CONTENT */
         .content-card {
@@ -639,10 +675,30 @@
             white-space: nowrap;
         }
 
-        .status-lunas { background: var(--green-bg); color: var(--green); }
-        .status-belum { background: var(--orange-bg); color: var(--orange); }
-        .status-menunggu { background: var(--blue-bg); color: var(--blue); }
-        .status-terlambat { background: var(--red-bg); color: var(--red); }
+        .status-lunas {
+            background: var(--green-bg);
+            color: var(--green);
+        }
+
+        .status-belum {
+            background: var(--orange-bg);
+            color: var(--orange);
+        }
+
+        .status-menunggu {
+            background: var(--blue-bg);
+            color: var(--blue);
+        }
+
+        .status-terlambat {
+            background: var(--red-bg);
+            color: var(--red);
+        }
+
+        .status-sebagian {
+            background: var(--purple-bg);
+            color: var(--purple);
+        }
 
         .action-buttons {
             display: flex;
@@ -783,8 +839,14 @@
         }
 
         @keyframes modalIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .modal-header {
@@ -881,9 +943,16 @@
             display: none;
         }
 
-        @media (max-width: 1200px) {
+        /* TABLET DAN LAPTOP KECIL */
+        @media (max-width: 1400px) {
             .stats-grid {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .main {
+                padding: 27px 25px;
             }
 
             .filters {
@@ -895,6 +964,7 @@
             }
         }
 
+        /* TABLET */
         @media (max-width: 850px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -921,8 +991,13 @@
                 display: grid;
                 place-items: center;
             }
+
+            .stats-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
         }
 
+        /* MOBILE */
         @media (max-width: 600px) {
             .main {
                 padding: 17px 13px;
@@ -998,9 +1073,6 @@
 
             .pagination-wrap {
                 padding: 15px;
-            }
-
-            .pagination-wrap {
                 align-items: flex-start;
                 flex-direction: column;
             }
@@ -1061,6 +1133,14 @@
             .stat-card h3 {
                 font-size: 19px;
             }
+
+            .stat-top {
+                gap: 5px;
+            }
+
+            .stat-label {
+                font-size: 8px;
+            }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -1073,6 +1153,41 @@
                 transition-duration: .01ms !important;
             }
         }
+
+        /* LOGOUT MODAL - SIDEBAR TAGIHAN */
+        .sidebar-bottom .kh-logout-component-wrapper {
+            width: 100%;
+            margin-top: 0;
+        }
+
+        .sidebar-bottom .kh-logout-trigger {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 11px 13px;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            background: transparent;
+            color: #B9C0C8;
+            text-align: left;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background .2s ease, color .2s ease;
+        }
+
+        .sidebar-bottom .kh-logout-trigger:hover {
+            background: rgba(213,143,143,.1);
+            color: var(--red);
+        }
+
+        .sidebar-bottom .kh-logout-trigger i {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
     </style>
 </head>
 
@@ -1157,17 +1272,11 @@
                     <i class="bi bi-person-circle"></i>
                     Profil Admin
                 </a>
-
-                <a href="{{ route('logout') }}"
-                   onclick="event.preventDefault(); if(confirm('Yakin ingin keluar dari halaman admin?')) document.getElementById('logout-form').submit();">
-                    <i class="bi bi-box-arrow-right"></i>
-                    Keluar
-                </a>
             </nav>
 
-            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display:none">
-                @csrf
-            </form>
+            <div class="kh-logout-component-wrapper">
+                @include('components.logout-modal')
+            </div>
         </div>
     </aside>
 
@@ -1175,9 +1284,13 @@
 
         <header class="topbar">
             <div class="topbar-left">
-                <button type="button" class="menu-toggle" onclick="toggleSidebar()" aria-label="Buka menu" aria-expanded="false">
+                <button type="button" class="menu-toggle"
+                        onclick="toggleSidebar()"
+                        aria-label="Buka menu"
+                        aria-expanded="false">
                     <i class="bi bi-list"></i>
                 </button>
+
                 <div>
                     <div class="breadcrumb">Admin / <span>Tagihan</span></div>
                     <h1 class="page-title">Manajemen Tagihan</h1>
@@ -1204,7 +1317,9 @@
             </button>
         </section>
 
+        {{-- STATISTIK TAGIHAN --}}
         <section class="stats-grid">
+
             <div class="stat-card stat-total">
                 <div class="stat-top">
                     <span class="stat-label">Total Tagihan</span>
@@ -1229,7 +1344,7 @@
                     <span class="stat-icon"><i class="bi bi-clock"></i></span>
                 </div>
                 <h3>{{ $ringkasan['belum_dibayar'] ?? 0 }}</h3>
-                <small>Menunggu pembayaran</small>
+                <small>Belum ada pembayaran disetujui</small>
             </div>
 
             <div class="stat-card stat-pending">
@@ -1241,6 +1356,15 @@
                 <small>Pembayaran perlu diperiksa</small>
             </div>
 
+            <div class="stat-card stat-partial">
+                <div class="stat-top">
+                    <span class="stat-label">Dibayar Sebagian</span>
+                    <span class="stat-icon"><i class="bi bi-pie-chart"></i></span>
+                </div>
+                <h3>{{ $ringkasan['dibayar_sebagian'] ?? 0 }}</h3>
+                <small>Pembayaran belum mencukupi</small>
+            </div>
+
             <div class="stat-card stat-late">
                 <div class="stat-top">
                     <span class="stat-label">Terlambat</span>
@@ -1249,6 +1373,7 @@
                 <h3>{{ $ringkasan['terlambat'] ?? 0 }}</h3>
                 <small>Melewati tanggal jatuh tempo</small>
             </div>
+
         </section>
 
         <section class="content-card">
@@ -1264,8 +1389,11 @@
                     <label for="search">Cari Tagihan</label>
                     <div class="search-wrap">
                         <i class="bi bi-search"></i>
-                        <input class="control" type="text" id="search" name="search"
-                               value="{{ request('search') }}"
+                        <input class="control"
+                               type="text"
+                               id="search"
+                               name="q"
+                               value="{{ request('q') }}"
                                placeholder="Nama penghuni atau nomor kamar...">
                     </div>
                 </div>
@@ -1277,13 +1405,17 @@
                         <option value="lunas" @selected(request('status') === 'lunas')>Lunas</option>
                         <option value="belum_dibayar" @selected(request('status') === 'belum_dibayar')>Belum Dibayar</option>
                         <option value="menunggu_verifikasi" @selected(request('status') === 'menunggu_verifikasi')>Menunggu Verifikasi</option>
+                        <option value="dibayar_sebagian" @selected(request('status') === 'dibayar_sebagian')>Dibayar Sebagian</option>
                         <option value="terlambat" @selected(request('status') === 'terlambat')>Terlambat</option>
                     </select>
                 </div>
 
                 <div class="field">
                     <label for="periode">Periode</label>
-                    <input class="control" type="month" name="periode" id="periode"
+                    <input class="control"
+                           type="month"
+                           name="periode"
+                           id="periode"
                            value="{{ request('periode') }}">
                 </div>
 
@@ -1291,6 +1423,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-funnel"></i> Filter
                     </button>
+
                     <a href="{{ route('admin.tagihan.index') }}" class="btn btn-light">
                         Reset
                     </a>
@@ -1324,6 +1457,7 @@
                                 'lunas' => 'Lunas',
                                 'belum_dibayar' => 'Belum Dibayar',
                                 'menunggu_verifikasi' => 'Menunggu Verifikasi',
+                                'dibayar_sebagian' => 'Dibayar Sebagian',
                                 'terlambat' => 'Terlambat',
                             ][$statusTampilan] ?? ucfirst(str_replace('_', ' ', $statusTampilan));
 
@@ -1331,6 +1465,7 @@
                                 'lunas' => 'status-lunas',
                                 'belum_dibayar' => 'status-belum',
                                 'menunggu_verifikasi' => 'status-menunggu',
+                                'dibayar_sebagian' => 'status-sebagian',
                                 'terlambat' => 'status-terlambat',
                             ][$statusTampilan] ?? 'status-belum';
 
@@ -1386,14 +1521,16 @@
 
                             <td>
                                 <div class="action-buttons">
-                                    <button type="button" class="icon-btn"
+                                    <button type="button"
+                                            class="icon-btn"
                                             title="Detail"
                                             aria-label="Lihat detail tagihan"
                                             onclick='openDetailModal(@json($detailData))'>
                                         <i class="bi bi-eye"></i>
                                     </button>
 
-                                    <button type="button" class="icon-btn"
+                                    <button type="button"
+                                            class="icon-btn"
                                             title="Edit"
                                             aria-label="Edit tagihan"
                                             onclick='openEditModal(@json($detailData))'>
@@ -1406,7 +1543,10 @@
                                         @csrf
                                         @method('DELETE')
 
-                                        <button type="submit" class="icon-btn delete" title="Hapus" aria-label="Hapus tagihan">
+                                        <button type="submit"
+                                                class="icon-btn delete"
+                                                title="Hapus"
+                                                aria-label="Hapus tagihan">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
@@ -1477,7 +1617,6 @@
                             @endforeach
                         </select>
 
-                        {{-- Dipakai saat edit agar booking_id tetap terkirim meskipun select dinonaktifkan. --}}
                         <input type="hidden" id="bookingIdHidden" disabled>
                     </div>
 
@@ -1488,8 +1627,14 @@
 
                     <div class="field">
                         <label for="jumlahInput">Jumlah Tagihan <span style="color:var(--red)">*</span></label>
-                        <input class="control" type="number" id="jumlahInput" name="jumlah"
-                               min="1" step="1" placeholder="Contoh: 1500000" required>
+                        <input class="control"
+                               type="number"
+                               id="jumlahInput"
+                               name="jumlah"
+                               min="1"
+                               step="1"
+                               placeholder="Contoh: 1500000"
+                               required>
                     </div>
 
                     <div class="field">
@@ -1508,13 +1653,16 @@
                             <option value="belum_dibayar">Belum Dibayar</option>
                             <option value="lunas">Lunas</option>
                             <option value="menunggu_verifikasi">Menunggu Verifikasi</option>
+                            <option value="dibayar_sebagian">Dibayar Sebagian</option>
                             <option value="terlambat">Terlambat</option>
                         </select>
                     </div>
 
                     <div class="field full">
                         <label for="keteranganInput">Keterangan</label>
-                        <textarea class="control" id="keteranganInput" name="keterangan"
+                        <textarea class="control"
+                                  id="keteranganInput"
+                                  name="keterangan"
                                   placeholder="Tambahkan keterangan tagihan..."></textarea>
                     </div>
                 </div>
@@ -1631,7 +1779,11 @@
         sidebar.classList.remove('open');
         sidebarOverlay.classList.remove('show');
         menuToggle?.setAttribute('aria-expanded', 'false');
-        document.body.style.overflow = '';
+
+        if (!billModal.classList.contains('show') &&
+            !detailModal.classList.contains('show')) {
+            document.body.style.overflow = '';
+        }
     }
 
     window.addEventListener('resize', function() {
@@ -1675,7 +1827,6 @@
         document.getElementById('saveBillButton').innerHTML =
             '<i class="bi bi-check-lg"></i> Simpan Perubahan';
 
-        // Saat edit, dropdown dikunci dan booking_id dikirim melalui hidden input.
         bookingSelect.disabled = true;
         bookingSelect.removeAttribute('name');
         bookingSelect.value = String(data.booking || '');
@@ -1709,7 +1860,9 @@
         bookingIdHidden.removeAttribute('name');
         bookingIdHidden.value = '';
 
-        document.body.style.overflow = '';
+        if (!detailModal.classList.contains('show')) {
+            document.body.style.overflow = '';
+        }
     }
 
     function openDetailModal(data) {
@@ -1721,8 +1874,18 @@
         document.getElementById('detailJumlah').textContent =
             'Rp ' + Number(data.jumlah || 0).toLocaleString('id-ID');
 
+        const statusLabels = {
+            lunas: 'Lunas',
+            belum_dibayar: 'Belum Dibayar',
+            menunggu_verifikasi: 'Menunggu Verifikasi',
+            dibayar_sebagian: 'Dibayar Sebagian',
+            terlambat: 'Terlambat'
+        };
+
+        const statusValue = data.status_tampilan || data.status || '';
+
         document.getElementById('detailStatus').textContent =
-            String(data.status_tampilan || data.status || '-').replaceAll('_', ' ');
+            statusLabels[statusValue] || statusValue.replaceAll('_', ' ') || '-';
 
         document.getElementById('detailTerbit').textContent =
             formatDate(data.tanggal_terbit);
@@ -1763,7 +1926,10 @@
 
     function closeDetailModal() {
         detailModal.classList.remove('show');
-        document.body.style.overflow = '';
+
+        if (!billModal.classList.contains('show')) {
+            document.body.style.overflow = '';
+        }
     }
 
     function formatDate(value) {
@@ -1780,7 +1946,11 @@
         modal.addEventListener('click', function(event) {
             if (event.target === modal) {
                 modal.classList.remove('show');
-                document.body.style.overflow = '';
+
+                if (!billModal.classList.contains('show') &&
+                    !detailModal.classList.contains('show')) {
+                    document.body.style.overflow = '';
+                }
             }
         });
     });
@@ -1800,14 +1970,16 @@
         const tempo = document.getElementById('tempoInput').value;
         const jumlahInput = document.getElementById('jumlahInput');
         const jumlah = Number(jumlahInput.value);
+        const isCreate = document.getElementById('billMethod').value === 'POST';
 
-        if (!periode || !terbit || !tempo || !Number.isFinite(jumlah) || jumlah <= 0) {
+        if (!periode || !terbit || !tempo ||
+            !Number.isFinite(jumlah) || jumlah <= 0) {
             event.preventDefault();
             alert('Lengkapi semua data wajib dengan benar.');
             return;
         }
 
-        if (!bookingSelect.value && document.getElementById('billMethod').value === 'POST') {
+        if (isCreate && !bookingSelect.value) {
             event.preventDefault();
             alert('Silakan pilih penghuni dan kamar terlebih dahulu.');
             bookingSelect.focus();
@@ -1820,7 +1992,8 @@
             return;
         }
 
-        if (terbit.substring(0, 7) !== periode || tempo.substring(0, 7) !== periode) {
+        if (terbit.substring(0, 7) !== periode ||
+            tempo.substring(0, 7) !== periode) {
             event.preventDefault();
             alert('Tanggal terbit dan jatuh tempo harus berada pada periode tagihan yang dipilih.');
             return;

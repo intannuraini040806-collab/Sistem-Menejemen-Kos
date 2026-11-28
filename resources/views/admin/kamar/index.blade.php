@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -164,20 +163,6 @@
             color: #929DA8;
             font-size: 10px;
         }
-
-        .logout-btn {
-            width: 100%;
-            display: block;
-            border: 1px solid rgba(187,196,205,.17);
-            border-radius: 9px;
-            background: transparent;
-            color: #BBC4CD;
-            padding: 10px;
-            text-align: left;
-            transition: .2s;
-        }
-
-        .logout-btn:hover { background: rgba(187,196,205,.08); }
 
         /* MAIN */
         .main {
@@ -734,6 +719,74 @@
             line-height: 1.5;
         }
 
+        /* FOTO KAMAR */
+        .photo-upload-box {
+            border: 1px dashed rgba(198,164,119,.45);
+            border-radius: 12px;
+            padding: 14px;
+            background: #191D22;
+        }
+
+        .photo-preview {
+            width: 100%;
+            height: 210px;
+            border-radius: 9px;
+            overflow: hidden;
+            background: #2D343D;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .photo-placeholder {
+            color: #929DA8;
+            text-align: center;
+            padding: 15px;
+            font-size: 12px;
+        }
+
+        .photo-placeholder i {
+            display: block;
+            font-size: 35px;
+            color: var(--gold);
+            margin-bottom: 8px;
+        }
+
+        .photo-upload-box input[type="file"] {
+            width: 100%;
+            padding: 9px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #242A31;
+            color: #BBC4CD;
+            font-size: 11px;
+        }
+
+        .photo-upload-box input[type="file"]::file-selector-button {
+            border: 0;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-right: 10px;
+            background: var(--gold);
+            color: #191D22;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .photo-upload-box .hint { margin-top: 9px; }
+
+        @media (max-width: 480px) {
+            .photo-preview { height: 180px; }
+        }
+
         /* FACILITIES */
         .facility-toolbar {
             display: flex;
@@ -901,7 +954,6 @@
 
         .mobile-backdrop.show { display: block; }
 
-
         /* RESPONSIVE */
         @media (max-width: 1100px) {
             .stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
@@ -958,6 +1010,115 @@
                 transition-duration: .01ms !important;
             }
         }
+
+        /* LOGOUT MODAL */
+        .sidebar-bottom .kh-logout-component-wrapper {
+            width: 100%;
+            margin-top: 0;
+        }
+
+        .sidebar-bottom .kh-logout-trigger {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid rgba(187,196,205,.17);
+            border-radius: 9px;
+            background: transparent;
+            color: #BBC4CD;
+            text-align: left;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            transition: .2s;
+        }
+
+        .sidebar-bottom .kh-logout-trigger:hover {
+            background: rgba(187,196,205,.08);
+            color: #D58F8F;
+        }
+
+        .sidebar-bottom .kh-logout-trigger i {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+
+        /* ==========================================
+           PERBAIKAN SCROLL MODAL DETAIL & EDIT
+           Header/footer tetap terlihat, isi modal dapat discroll.
+        ========================================== */
+        .overlay {
+            overflow-x: hidden;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal {
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 40px);
+            max-height: calc(100dvh - 40px);
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        /* Form adalah pembungkus body dan footer pada modal edit. */
+        .modal > form {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: #59636E #191D22;
+        }
+
+        .modal-body::-webkit-scrollbar { width: 7px; }
+        .modal-body::-webkit-scrollbar-track {
+            background: #191D22;
+            border-radius: 10px;
+        }
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #59636E;
+            border-radius: 10px;
+        }
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: #929DA8;
+        }
+
+        .modal-header,
+        .modal-footer {
+            flex: 0 0 auto;
+        }
+
+        @media (max-width: 480px) {
+            .overlay {
+                padding: 10px;
+                align-items: flex-start;
+            }
+
+            .modal {
+                width: 100%;
+                max-height: calc(100vh - 20px);
+                max-height: calc(100dvh - 20px);
+                margin: 0 auto;
+            }
+
+            .modal-body { padding: 17px; }
+        }
+
     </style>
 </head>
 
@@ -1034,12 +1195,9 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="logout-btn">
-                    <i class="bi bi-box-arrow-left"></i> Keluar
-                </button>
-            </form>
+            <div class="kh-logout-component-wrapper">
+                @include('components.logout-modal')
+            </div>
         </div>
     </aside>
 
@@ -1201,7 +1359,7 @@
             </button>
         </div>
 
-        <form id="roomForm">
+        <form id="roomForm" enctype="multipart/form-data">
             <div class="modal-body">
                 <input type="hidden" id="roomId">
 
@@ -1283,6 +1441,32 @@
                         <div class="hint">Centang fasilitas yang tersedia di kamar.</div>
                     </div>
 
+                    <!-- UPLOAD FOTO KAMAR -->
+                    <div class="form-group full">
+                        <label for="roomPhoto">Foto Kamar</label>
+
+                        <div class="photo-upload-box">
+                            <div class="photo-preview">
+                                <img id="photoPreview" alt="Preview foto kamar">
+
+                                <div class="photo-placeholder" id="photoPlaceholder">
+                                    <i class="bi bi-image"></i>
+                                    <span>Belum ada foto kamar</span>
+                                </div>
+                            </div>
+
+                            <input
+                                type="file"
+                                id="roomPhoto"
+                                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                            >
+
+                            <div class="hint" id="photoHint">
+                                Pilih foto kamar. Format JPG, JPEG, PNG, atau WebP. Maksimal 2 MB.
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-group full">
                         <label for="roomDescription">Deskripsi</label>
                         <textarea id="roomDescription" maxlength="500"
@@ -1358,10 +1542,13 @@ const roomConfig = {
 };
 
 const allowedFacilities = ['AC', 'Wi-Fi', 'CCTV', 'Laundry', 'Lemari', 'Meja'];
+const allowedPhotoTypes = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_PHOTO_SIZE = 2 * 1024 * 1024;
 
 let rooms = [];
 let currentPage = 1;
 let isLoading = false;
+let photoPreviewObjectUrl = null;
 
 const $ = id => document.getElementById(id);
 
@@ -1431,7 +1618,8 @@ function normalizeRoom(room) {
         bathroom: normalizeBathroom(room.jenis_kamar_mandi ?? room.bathroom),
         status: normalizeStatus(room.status),
         facilities: normalizeFacilities(room.fasilitas ?? room.facilities),
-        description: String(room.deskripsi ?? room.description ?? '')
+        description: String(room.deskripsi ?? room.description ?? ''),
+        photoUrl: room.photo_url ?? room.photoUrl ?? null
     };
 }
 
@@ -1491,8 +1679,12 @@ async function apiRequest(url, method = 'GET', body = null) {
     };
 
     if (body !== null) {
-        options.headers['Content-Type'] = 'application/json';
-        options.body = JSON.stringify(body);
+        if (body instanceof FormData) {
+            options.body = body;
+        } else {
+            options.headers['Content-Type'] = 'application/json';
+            options.body = JSON.stringify(body);
+        }
     }
 
     const response = await fetch(url, options);
@@ -1502,27 +1694,128 @@ async function apiRequest(url, method = 'GET', body = null) {
     try {
         result = await response.json();
     } catch {
-        throw new Error('Respons server tidak dapat dibaca. Periksa route dan log Laravel.');
+        throw new Error(
+            'Respons server tidak dapat dibaca. Periksa route dan log Laravel.'
+        );
     }
 
     if (!response.ok) {
         if (response.status === 422 && result.errors) {
             const firstError = Object.values(result.errors).flat()[0];
-            throw new Error(firstError || result.message || 'Periksa kembali data yang dimasukkan.');
+
+            throw new Error(
+                firstError || result.message ||
+                'Periksa kembali data yang dimasukkan.'
+            );
         }
 
         if (response.status === 419) {
-            throw new Error('Sesi halaman sudah kedaluwarsa. Muat ulang halaman lalu coba lagi.');
+            throw new Error(
+                'Sesi halaman sudah kedaluwarsa. Muat ulang halaman lalu coba lagi.'
+            );
         }
 
         if (response.status === 401 || response.status === 403) {
-            throw new Error('Kamu tidak memiliki akses untuk melakukan tindakan ini.');
+            throw new Error(
+                'Kamu tidak memiliki akses untuk melakukan tindakan ini.'
+            );
         }
 
         throw new Error(result.message || 'Terjadi kesalahan pada server.');
     }
 
     return result;
+}
+
+/* ==========================================
+   FOTO KAMAR DAN PREVIEW
+========================================== */
+function showPhotoPreview(url) {
+    const image = $('photoPreview');
+    const placeholder = $('photoPlaceholder');
+
+    // Bersihkan handler sebelumnya.
+    image.onload = null;
+    image.onerror = null;
+
+    if (url) {
+        placeholder.style.display = 'none';
+        image.style.display = 'block';
+
+        // Pasang handler sebelum memuat gambar.
+        image.onload = () => {
+            image.style.display = 'block';
+            placeholder.style.display = 'none';
+        };
+
+        image.onerror = () => {
+            image.removeAttribute('src');
+            image.style.display = 'none';
+            placeholder.style.display = 'block';
+
+            placeholder.querySelector('span').textContent =
+                'Foto tidak dapat ditampilkan';
+        };
+
+        // Muat gambar setelah handler siap.
+        image.src = url;
+    } else {
+        image.removeAttribute('src');
+        image.style.display = 'none';
+        placeholder.style.display = 'block';
+
+        placeholder.querySelector('span').textContent =
+            'Belum ada foto kamar';
+    }
+}
+
+
+/* ==========================================
+   RESET DAN GANTI PREVIEW FOTO KAMAR
+========================================== */
+
+function resetPhotoPreview(existingUrl = null) {
+    if (photoPreviewObjectUrl) {
+        URL.revokeObjectURL(photoPreviewObjectUrl);
+        photoPreviewObjectUrl = null;
+    }
+
+    $('roomPhoto').value = '';
+
+    showPhotoPreview(existingUrl);
+
+    $('photoHint').textContent = existingUrl
+        ? 'Foto kamar saat ini. Pilih foto baru jika ingin menggantinya. Maksimal 2 MB.'
+        : 'Pilih foto kamar. Format JPG, JPEG, PNG, atau WebP. Maksimal 2 MB.';
+}
+
+function handlePhotoChange(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (!allowedPhotoTypes.includes(file.type)) {
+        event.target.value = '';
+        showToast('Format foto harus JPG, JPEG, PNG, atau WebP.', true);
+        return;
+    }
+
+    if (file.size > MAX_PHOTO_SIZE) {
+        event.target.value = '';
+        showToast('Ukuran foto maksimal 2 MB.', true);
+        return;
+    }
+
+    if (photoPreviewObjectUrl) {
+        URL.revokeObjectURL(photoPreviewObjectUrl);
+    }
+
+    photoPreviewObjectUrl = URL.createObjectURL(file);
+
+    showPhotoPreview(photoPreviewObjectUrl);
+
+    $('photoHint').textContent =
+        `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
 }
 
 /* ==========================================
@@ -1624,7 +1917,7 @@ function getFilteredRooms() {
         switch (sort) {
             case 'number-desc':
                 return b.number.localeCompare(a.number, 'id', { numeric: true });
-
+                
             case 'price-asc':
                 return a.price - b.price;
 
@@ -1922,6 +2215,7 @@ function openAddModal() {
     updateTypeFields(true);
     setSelectedFacilities([]);
     updateDescriptionCount();
+    resetPhotoPreview();
 
     openModal('roomModal');
 }
@@ -1954,6 +2248,7 @@ function openEditModal(id) {
 
     setSelectedFacilities(room.facilities);
     updateDescriptionCount();
+    resetPhotoPreview(room.photoUrl);
 
     openModal('roomModal');
 }
@@ -2072,6 +2367,22 @@ function validateRoomForm() {
         return false;
     }
 
+    const photo = $('roomPhoto').files?.[0];
+
+    if (photo) {
+        if (!allowedPhotoTypes.includes(photo.type)) {
+            showToast('Format foto harus JPG, JPEG, PNG, atau WebP.', true);
+            $('roomPhoto').focus();
+            return false;
+        }
+
+        if (photo.size > MAX_PHOTO_SIZE) {
+            showToast('Ukuran foto maksimal 2 MB.', true);
+            $('roomPhoto').focus();
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -2081,30 +2392,52 @@ function validateRoomForm() {
 
 function buildPayload() {
     const status = $('roomStatus').value;
+    const formData = new FormData();
 
-    return {
-        nomor_kamar: $('roomNumber').value.trim().toUpperCase(),
+    formData.append(
+        'nomor_kamar',
+        $('roomNumber').value.trim().toUpperCase()
+    );
 
-        tipe: $('roomType').value === 'Single' ? 'single' : 'double',
+    formData.append(
+        'tipe',
+        $('roomType').value === 'Single' ? 'single' : 'double'
+    );
 
-        harga: Number($('roomPrice').value),
+    formData.append('harga', $('roomPrice').value);
+    formData.append('kapasitas', $('roomCapacity').value);
+    formData.append('jumlah_penghuni', $('roomOccupants').value);
 
-        kapasitas: Number($('roomCapacity').value),
-
-        jumlah_penghuni: Number($('roomOccupants').value),
-
-        jenis_kamar_mandi: $('roomBathroom').value === 'Dalam Kamar'
+    formData.append(
+        'jenis_kamar_mandi',
+        $('roomBathroom').value === 'Dalam Kamar'
             ? 'dalam_kamar'
-            : 'bersama',
+            : 'bersama'
+    );
 
-        status: status === 'Perbaikan'
+    formData.append(
+        'status',
+        status === 'Perbaikan'
             ? 'maintenance'
-            : (status === 'Terisi' ? 'terisi' : 'tersedia'),
+            : (status === 'Terisi' ? 'terisi' : 'tersedia')
+    );
 
-        fasilitas: getSelectedFacilities(),
+    getSelectedFacilities().forEach(facility => {
+        formData.append('fasilitas[]', facility);
+    });
 
-        deskripsi: $('roomDescription').value.trim()
-    };
+    formData.append(
+        'deskripsi',
+        $('roomDescription').value.trim()
+    );
+
+    const photo = $('roomPhoto').files?.[0];
+
+    if (photo) {
+        formData.append('foto', photo);
+    }
+
+    return formData;
 }
 
 /* ==========================================
@@ -2129,15 +2462,27 @@ async function saveRoom(event) {
         const payload = buildPayload();
 
         if (id) {
+            /*
+             * Laravel method spoofing:
+             * FormData dikirim melalui POST dengan _method=PUT.
+             * Cara ini diperlukan agar file upload terbaca saat update.
+             */
+            payload.append('_method', 'PUT');
+
             await apiRequest(
                 API.update.replace('__ID__', encodeURIComponent(id)),
-                'PUT',
+                'POST',
                 payload
             );
 
-            showToast('Data kamar berhasil diperbarui.');
+            showToast('Data kamar dan foto berhasil diperbarui.');
         } else {
-            await apiRequest(API.store, 'POST', payload);
+            await apiRequest(
+                API.store,
+                'POST',
+                payload
+            );
+
             showToast('Kamar baru berhasil ditambahkan.');
         }
 
@@ -2233,6 +2578,7 @@ function closeSidebar() {
 $('addRoomBtn').addEventListener('click', openAddModal);
 $('roomForm').addEventListener('submit', saveRoom);
 $('refreshBtn').addEventListener('click', loadRooms);
+$('roomPhoto').addEventListener('change', handlePhotoChange);
 
 /* ==========================================
    EVENT TIPE DAN PENGHUNI
@@ -2369,6 +2715,16 @@ function setCurrentDate() {
         year: 'numeric'
     }).format(new Date());
 }
+
+/* ==========================================
+   PEMBERSIHAN PREVIEW
+========================================== */
+
+window.addEventListener('beforeunload', () => {
+    if (photoPreviewObjectUrl) {
+        URL.revokeObjectURL(photoPreviewObjectUrl);
+    }
+});
 
 /* ==========================================
    INISIALISASI

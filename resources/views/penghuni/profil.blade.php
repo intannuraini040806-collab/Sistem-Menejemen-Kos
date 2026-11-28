@@ -242,25 +242,41 @@
             font-size: 10px;
         }
 
-        .logout {
+        .logout-component-wrapper {
             width: 100%;
-            border: none;
-            background: transparent;
-            color: #AEB7C0;
-            padding: 12px 14px;
-            border-radius: 8px;
-            text-align: left;
-            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .logout-component-wrapper .kh-logout-trigger {
+            width: 100%;
             display: flex;
             align-items: center;
+            justify-content: flex-start;
             gap: 12px;
-            cursor: pointer;
+            padding: 12px 14px;
+            color: #AEB7C0;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            text-align: left;
             transition: background-color .15s ease, color .15s ease;
         }
 
-        .logout:hover {
-            background: rgba(213,143,143,.1);
+        .logout-component-wrapper .kh-logout-trigger:hover {
             color: var(--danger);
+            background: rgba(213,143,143,.1);
+            border-color: rgba(213,143,143,.12);
+        }
+
+        .logout-component-wrapper .kh-logout-trigger i,
+        .logout-component-wrapper .kh-logout-trigger svg {
+            width: 17px;
+            height: 17px;
+            font-size: 17px;
+            flex-shrink: 0;
         }
 
         .overlay {
@@ -1186,12 +1202,9 @@
             </div>
         </div>
 
-        <form id="logoutForm" action="{{ route('logout') }}" method="POST" style="display:none;">
-            @csrf
-        </form>
-        <button class="logout" type="button" onclick="logout()">
-            <i class="bi bi-box-arrow-left"></i> Keluar
-        </button>
+        <div class="logout-component-wrapper">
+            @include('components.logout-modal')
+        </div>
     </div>
 </aside>
 
@@ -1592,46 +1605,6 @@
         </div>
     </section>
 </main>
-
-<div
-    class="modal-backdrop"
-    id="confirmModal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="logoutTitle"
->
-    <div class="modal-card">
-
-        <div class="modal-icon">
-            <i class="bi bi-box-arrow-right"></i>
-        </div>
-
-        <h3 id="logoutTitle">Keluar dari Akun?</h3>
-
-        <p>
-            Apakah kamu yakin ingin mengakhiri sesi dan keluar dari akun KosHaven?
-        </p>
-
-        <div class="modal-actions">
-            <button
-                class="btn btn-secondary"
-                type="button"
-                onclick="closeLogoutModal()"
-            >
-                Batal
-            </button>
-
-            <button
-                class="btn btn-danger"
-                type="button"
-                onclick="confirmLogout()"
-            >
-                Ya, Keluar
-            </button>
-        </div>
-
-    </div>
-</div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -2127,39 +2100,19 @@
         }, 3000);
     }
 
-    // LOGOUT
-
-    function logout() {
-        document.getElementById('confirmModal').classList.add('show');
-        syncBodyScrollLock();
-    }
-
-    function closeLogoutModal() {
-        document.getElementById('confirmModal').classList.remove('show');
-        syncBodyScrollLock();
-    }
-
-    function confirmLogout() {
-        document.getElementById('logoutForm').submit();
-    }
-
     // SIDEBAR RESPONSIVE
 
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
     const menuToggle = document.getElementById('menuToggle');
-    const confirmModal = document.getElementById('confirmModal');
-
+    
     function syncBodyScrollLock() {
         const sidebarOpen = sidebar.classList.contains('show');
-        const modalOpen = confirmModal.classList.contains('show');
 
         document.body.classList.toggle(
             'sidebar-open',
             sidebarOpen && window.innerWidth <= 850
         );
-
-        document.body.classList.toggle('modal-open', modalOpen);
     }
 
     function openSidebar() {
@@ -2200,14 +2153,14 @@
 
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape') {
-            closeSidebar();
-            closeLogoutModal();
-        }
-    });
+            const logoutModal = document.getElementById('khLogoutModal');
 
-    confirmModal.addEventListener('click', event => {
-        if (event.target === confirmModal) {
-            closeLogoutModal();
+            // Biarkan komponen logout menangani tombol Escape.
+            if (logoutModal && logoutModal.classList.contains('is-visible')) {
+                return;
+            }
+
+            closeSidebar();
         }
     });
 

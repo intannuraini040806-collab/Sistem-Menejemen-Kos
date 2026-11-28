@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\Pembayaran;
 use App\Models\Tagihan;
 use App\Models\User;
+use App\Notifications\UserActivityNotification;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -181,6 +182,16 @@ class PembayaranService
 
                 $dataPembayaran->terbitkanKuitansi();
 
+                User::find($dataPembayaran->user_id)?->notify(new UserActivityNotification([
+                    'key' => 'payment-approved-' . $dataPembayaran->id,
+                    'title' => 'Pembayaran DP Berhasil Diverifikasi',
+                    'message' => 'Pembayaran DP kamu telah disetujui. Kwitansi ' . ($dataPembayaran->nomor_kuitansi ?: '') . ' sudah tersedia.',
+                    'type' => 'payment',
+                    'icon' => 'bi-receipt-cutoff',
+                    'url' => route('kuitansi.show', $dataPembayaran),
+                    'pembayaran_id' => $dataPembayaran->id,
+                ]));
+
                 return [
                     'ok' => true,
                     'message' => 'Pembayaran DP booking berhasil diverifikasi. Silakan setujui booking untuk check-in penghuni.',
@@ -228,6 +239,16 @@ class PembayaranService
             ]);
 
             $dataPembayaran->terbitkanKuitansi();
+
+            User::find($dataPembayaran->user_id)?->notify(new UserActivityNotification([
+                'key' => 'payment-approved-' . $dataPembayaran->id,
+                'title' => 'Pembayaran Berhasil Diverifikasi!',
+                'message' => 'Pembayaran sebesar Rp ' . number_format((int) $dataPembayaran->jumlah_bayar, 0, ',', '.') . ' telah disetujui. Kwitansi resmi kamu sudah tersedia.',
+                'type' => 'payment',
+                'icon' => 'bi-receipt-cutoff',
+                'url' => route('kuitansi.show', $dataPembayaran),
+                'pembayaran_id' => $dataPembayaran->id,
+            ]));
 
             $tagihanTerbaru = $this->kosService->hitungUlangSaldoTagihan($tagihan);
 

@@ -238,25 +238,38 @@
             margin-top: 3px;
         }
 
-        .sidebar-bottom form button {
+        /* LOGOUT MODAL - SIDEBAR MANAJEMEN PENGGUNA */
+        .sidebar-bottom .kh-logout-component-wrapper {
             width: 100%;
-            border: 1px solid transparent;
-            background: rgba(213, 143, 143, .08);
-            color: #E2B2B2;
-            border-radius: 9px;
-            padding: 12px 14px;
-            text-align: left;
-            cursor: pointer;
+            margin-top: 0;
+        }
+
+        .sidebar-bottom .kh-logout-trigger {
+            width: 100%;
             display: flex;
             align-items: center;
+            justify-content: flex-start;
             gap: 12px;
+            padding: 12px 14px;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            background: rgba(213, 143, 143, .08);
+            color: #E2B2B2;
+            text-align: left;
+            font-family: 'DM Sans', sans-serif;
             font-size: 13px;
+            cursor: pointer;
             transition: background .16s ease, border-color .16s ease;
         }
 
-        .sidebar-bottom form button:hover {
+        .sidebar-bottom .kh-logout-trigger:hover {
             background: rgba(213, 143, 143, .15);
             border-color: rgba(213, 143, 143, .2);
+        }
+
+        .sidebar-bottom .kh-logout-trigger i {
+            font-size: 17px;
+            flex-shrink: 0;
         }
 
         /* MAIN */
@@ -1319,14 +1332,9 @@
             </div>
         </div>
 
-        <form action="{{ route('logout') }}" method="POST"
-              onsubmit="return confirm('Yakin ingin keluar dari halaman admin?')">
-            @csrf
-            <button type="submit">
-                <i class="bi bi-box-arrow-right"></i>
-                Keluar
-            </button>
-        </form>
+        <div class="kh-logout-component-wrapper">
+            @include('components.logout-modal')
+        </div>
 
     </div>
 </aside>

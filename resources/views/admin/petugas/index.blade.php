@@ -244,25 +244,38 @@
             font-size: 10px;
         }
 
-        .logout {
+       /* LOGOUT MODAL - SIDEBAR DATA PETUGAS */
+        .sidebar-bottom .kh-logout-component-wrapper {
             width: 100%;
-            border: none;
+            margin-top: 0;
+        }
+
+        .sidebar-bottom .kh-logout-trigger {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 11px 13px;
+            border: 1px solid transparent;
+            border-radius: 8px;
             background: transparent;
             color: #B9C0C8;
             text-align: left;
-            padding: 11px 13px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
             font-size: 12px;
-            border-radius: 8px;
+            cursor: pointer;
             transition: background .16s ease, color .16s ease;
         }
 
-        .logout:hover {
+        .sidebar-bottom .kh-logout-trigger:hover {
             background: rgba(213,143,143,.1);
             color: var(--danger);
+        }
+
+        .sidebar-bottom .kh-logout-trigger i {
+            font-size: 16px;
+            flex-shrink: 0;
         }
 
         .sidebar-overlay {
@@ -1204,15 +1217,9 @@
                 </div>
             </div>
 
-            <form action="{{ route('logout') }}" method="POST"
-                  onsubmit="return confirm('Apakah kamu yakin ingin keluar dari dashboard?')">
-                @csrf
-
-                <button type="submit" class="logout">
-                    <i class="bi bi-box-arrow-left"></i>
-                    Keluar
-                </button>
-            </form>
+            <div class="kh-logout-component-wrapper">
+                @include('components.logout-modal')
+            </div>
 
         </div>
 

@@ -34,7 +34,13 @@ class KamarController extends Controller
 
         // Booking yang masih menunggu persetujuan.
         $bookingMenunggu = Booking::query()
-            ->with('kamar')
+            ->with([
+                'kamar',
+                'pembayarans' => function ($query) {
+                    $query->where('jenis_pembayaran', 'dp_booking')
+                        ->latest();
+                },
+            ])
             ->where('user_id', $user->id)
             ->where('status', 'menunggu')
             ->latest()
@@ -67,7 +73,7 @@ class KamarController extends Controller
     }
 
     /**
-     * Menyimpan pengajuan booking kamar dari penghuni.
+     * Mengajukan booking kamar dan menghitung DP minimum.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -98,9 +104,8 @@ class KamarController extends Controller
 
         $user = $request->user();
 
-        DB::transaction(function () use ($user, $validated) {
-            // Mengunci data pengguna agar tidak membuat booking ganda
-            // melalui dua permintaan secara bersamaan.
+        $booking = DB::transaction(function () use ($user, $validated) {
+            // Mengunci pengguna untuk mencegah booking ganda.
             $user->newQuery()
                 ->whereKey($user->id)
                 ->lockForUpdate()
@@ -130,8 +135,8 @@ class KamarController extends Controller
                 ]);
             }
 
-            // Mengunci kamar agar kapasitasnya tidak berubah
-            // saat pengajuan booking sedang diproses.
+            // Mengunci kamar agar kapasitas tidak berubah
+            // selama pengajuan booking diproses.
             $kamar = Kamar::query()
                 ->whereKey($validated['kamar_id'])
                 ->lockForUpdate()
@@ -146,21 +151,41 @@ class KamarController extends Controller
                 ]);
             }
 
-            Booking::create([
+            // Harga kamar diambil langsung dari database.
+            // Nominal DP tidak pernah dipercaya dari input browser.
+            $hargaKamar = (int) $kamar->harga;
+
+            if ($hargaKamar <= 0) {
+                throw ValidationException::withMessages([
+                    'kamar_id' => 'Harga kamar belum valid. Silakan hubungi admin.',
+                ]);
+            }
+
+            // DP minimum sebesar 30% dari harga sewa bulanan.
+            $nominalDpMinimum = (int) ceil($hargaKamar * 0.30);
+
+            $booking = Booking::create([
                 'user_id' => $user->id,
                 'kamar_id' => $kamar->id,
                 'tanggal_booking' => today(),
                 'tanggal_masuk' => $validated['tanggal_masuk'],
+                'nominal_dp' => $nominalDpMinimum,
+                'tenggat_dp' => null,
+                'kebijakan_dp' => 'DP minimum sebesar 30% dari harga sewa kamar per bulan. Penghuni dapat membayar lebih dari nominal minimum tersebut. Booking hanya dapat disetujui setelah pembayaran DP diverifikasi oleh admin.',
                 'status' => 'menunggu',
                 'catatan' => $validated['catatan'] ?? null,
             ]);
-        });
+
+            return $booking;
+        }, 3);
 
         return redirect()
             ->route('penghuni.kamar.index')
             ->with(
                 'success',
-                'Pengajuan booking berhasil dikirim. Silakan tunggu persetujuan Admin.'
+                'Pengajuan booking berhasil dibuat. DP minimum kamu adalah Rp '
+                . number_format($booking->nominal_dp, 0, ',', '.')
+                . '. Silakan lanjutkan pembayaran DP.'
             );
     }
 }

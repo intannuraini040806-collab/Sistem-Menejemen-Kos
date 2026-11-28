@@ -1097,6 +1097,40 @@
                 animation-duration: .01ms !important;
             }
         }
+
+        /* LOGOUT MODAL - SIDEBAR PEMBAYARAN */
+        .sidebar-bottom .kh-logout-component-wrapper {
+            width: 100%;
+            margin-top: 0;
+        }
+
+        .sidebar-bottom .kh-logout-trigger {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 12px 14px;
+            border: 1px solid rgba(213, 143, 143, .14);
+            border-radius: 8px;
+            background: rgba(213, 143, 143, .07);
+            color: var(--danger);
+            text-align: left;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        .sidebar-bottom .kh-logout-trigger:hover {
+            background: rgba(213, 143, 143, .16);
+            color: var(--danger);
+        }
+
+        .sidebar-bottom .kh-logout-trigger i {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
 </style>
 </head>
 
@@ -1187,13 +1221,9 @@
             </div>
         </div>
 
-        <form id="logoutForm" action="{{ route('logout') }}" method="POST">
-            @csrf
-            <button class="logout" type="button" onclick="logoutAdmin()">
-                <i class="bi bi-box-arrow-right"></i>
-                Keluar
-            </button>
-        </form>
+        <div class="kh-logout-component-wrapper">
+            @include('components.logout-modal')
+        </div>
     </div>
 
 </aside>
@@ -1906,20 +1936,6 @@
         }
 
         document.body.classList.remove('sidebar-open');
-    }
-
-    /* =========================================
-       LOGOUT
-    ========================================= */
-
-    function logoutAdmin() {
-        const confirmation = confirm(
-            'Yakin ingin keluar dari halaman admin?'
-        );
-
-        if (!confirmation) return;
-
-        document.getElementById('logoutForm').submit();
     }
 
     /* =========================================

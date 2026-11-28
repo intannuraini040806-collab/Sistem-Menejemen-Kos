@@ -244,27 +244,39 @@
             font-size: 10px;
         }
 
-        .logout {
+       /* LOGOUT MODAL - SIDEBAR PROFIL ADMIN */
+        .sidebar-bottom .kh-logout-component-wrapper {
             width: 100%;
-            border: none;
+            margin-top: 0;
+        }
+
+        .sidebar-bottom .kh-logout-trigger {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 12px 14px;
+            border: 1px solid transparent;
+            border-radius: 8px;
             background: transparent;
             color: #C1C8CF;
             text-align: left;
-            padding: 12px 14px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
             font-size: 13px;
-            border-radius: 8px;
+            cursor: pointer;
             transition: background .2s ease, color .2s ease;
         }
 
-        .logout:hover {
+        .sidebar-bottom .kh-logout-trigger:hover {
             background: rgba(213,143,143,.1);
             color: var(--danger);
         }
 
+        .sidebar-bottom .kh-logout-trigger i {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
         .sidebar-overlay {
             display: none;
         }
@@ -1096,14 +1108,9 @@
                 </div>
             </div>
 
-            <button
-                type="button"
-                class="logout"
-                onclick="logoutDemo()"
-            >
-                <i class="bi bi-box-arrow-left"></i>
-                Keluar
-            </button>
+            <div class="kh-logout-component-wrapper">
+                @include('components.logout-modal')
+            </div>
 
         </div>
 
@@ -1585,20 +1592,6 @@
                 closeSidebar();
             }
         });
-
-        /* =====================================
-           LOGOUT
-        ===================================== */
-
-        function logoutDemo() {
-            const confirmLogout = confirm(
-                'Apakah kamu yakin ingin keluar dari dashboard?'
-            );
-
-            if (confirmLogout) {
-                window.location.href = "{{ route('login') }}";
-            }
-        }
 
         /* =====================================
            DATA PROFIL

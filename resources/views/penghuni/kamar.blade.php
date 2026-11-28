@@ -274,25 +274,42 @@
             font-size: 10px;
         }
 
-        .logout-btn {
+        /* SHARED LOGOUT COMPONENT */
+        .logout-component-wrapper {
+            width: 100%;
+            margin-top: 3px;
+        }
+
+        .logout-component-wrapper .kh-logout-trigger {
             display: flex;
             width: 100%;
             align-items: center;
+            justify-content: flex-start;
             gap: 12px;
             padding: 12px 14px;
-            border: 0;
+            border: 1px solid transparent;
             border-radius: 8px;
             background: transparent;
             color: #AEB7C0;
+            font-family: 'DM Sans', sans-serif;
             font-size: 12px;
+            font-weight: 500;
             text-align: left;
-            cursor: pointer;
             transition: background .2s ease, color .2s ease;
         }
 
-        .logout-btn:hover {
+        .logout-component-wrapper .kh-logout-trigger:hover {
             background: rgba(213,143,143,.1);
+            border-color: rgba(213,143,143,.12);
             color: var(--danger);
+        }
+
+        .logout-component-wrapper .kh-logout-trigger i,
+        .logout-component-wrapper .kh-logout-trigger svg {
+            width: 17px;
+            height: 17px;
+            flex-shrink: 0;
+            font-size: 17px;
         }
 
         /* MAIN CONTENT */
@@ -492,7 +509,7 @@
             line-height: 1.6;
         }
 
-        /* ROOM CARDS */
+        /* PENGELOMPOKAN KAMAR BERDASARKAN LANTAI DAN TIPE */
         .room-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -512,6 +529,26 @@
             transform: translateY(-3px);
             border-color: rgba(198,164,119,.35);
             box-shadow: 0 16px 38px rgba(0,0,0,.24);
+        }
+
+
+        .room-floor-badge {
+            position: absolute;
+            left: 14px;
+            top: 14px;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 11px;
+            border: 1px solid rgba(224, 196, 155, .42);
+            border-radius: 999px;
+            background: rgba(18, 22, 27, .88);
+            color: var(--primary-light);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .02em;
+            backdrop-filter: blur(8px);
         }
 
         .room-image-wrap {
@@ -1552,13 +1589,9 @@
                 </div>
             </div>
 
-            <form action="{{ route('logout') }}" method="POST" onsubmit="return confirm('Apakah kamu yakin ingin keluar dari dashboard?')">
-                @csrf
-                <button type="submit" class="logout-btn">
-                    <i class="bi bi-box-arrow-left"></i>
-                    Keluar
-                </button>
-            </form>
+            <div class="logout-component-wrapper">
+                @include('components.logout-modal')
+            </div>
         </div>
     </aside>
 
@@ -1707,6 +1740,11 @@
                     <div class="detail-item">
                         <span>Tipe Kamar</span>
                         <strong>{{ $namaTipeKamar($kamar->tipe) }}</strong>
+                    </div>
+
+                    <div class="detail-item">
+                        <span>Lantai</span>
+                        <strong>Lantai {{ $kamar->lantai ?? 1 }}</strong>
                     </div>
 
                     <div class="detail-item">
@@ -1904,6 +1942,7 @@
 
                             <p>
                                 {{ $namaTipeKamar($kamarMenunggu?->tipe ?? '-') }}
+                                · Lantai {{ $kamarMenunggu?->lantai ?? 1 }}
                                 · {{ $jenisKamarMandi($kamarMenunggu?->jenis_kamar_mandi ?? '-') }}
                             </p>
 
@@ -1956,15 +1995,17 @@
                     <div>
                         <h2>Daftar Kamar Tersedia</h2>
                         <p>
-                            {{ $kamarsTersedia->count() }} kamar tersedia untuk diajukan.
+                            {{ $kamarsTersedia->count() }} kamar tersedia. Setiap kartu menampilkan lokasi lantainya.
                         </p>
                     </div>
                 </div>
 
                 @if($kamarsTersedia->isNotEmpty())
-
                     <div class="room-grid">
-                        @foreach($kamarsTersedia as $item)
+                        @foreach($kamarsTersedia->sortBy([
+                            ['lantai', 'asc'],
+                            ['nomor_kamar', 'asc'],
+                        ]) as $item)
                             @php
                                 $fotoItem = $item->foto
                                     ? asset('storage/' . $item->foto)
@@ -1984,6 +2025,11 @@
                                         loading="lazy"
                                         onerror="this.src='https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=85'"
                                     >
+
+                                    <span class="room-floor-badge">
+                                        <i class="bi bi-layers"></i>
+                                        Lantai {{ $item->lantai ?? '-' }}
+                                    </span>
 
                                     <span class="status-badge status-available">
                                         <i class="bi bi-check-circle-fill"></i>
@@ -2100,6 +2146,11 @@
                                             <div class="detail-item">
                                                 <span>Tipe Kamar</span>
                                                 <strong>{{ $namaTipeKamar($item->tipe) }}</strong>
+                                            </div>
+
+                                            <div class="detail-item">
+                                                <span>Lantai</span>
+                                                <strong>Lantai {{ $item->lantai ?? 1 }}</strong>
                                             </div>
 
                                             <div class="detail-item">
@@ -2224,6 +2275,7 @@
                                     </div>
                                 </div>
                             </div>
+                                        
                         @endforeach
                     </div>
 
@@ -2359,11 +2411,18 @@
             });
 
             document.addEventListener('keydown', function (event) {
-                if (event.key === 'Escape') {
-                    document.querySelectorAll('.modal-overlay.show').forEach(closeModal);
-                    closeSidebar();
+            if (event.key === 'Escape') {
+                const logoutModal = document.getElementById('khLogoutModal');
+
+                // Biarkan komponen logout menangani Escape sendiri.
+                if (logoutModal && logoutModal.classList.contains('is-visible')) {
+                    return;
                 }
-            });
+
+                document.querySelectorAll('.modal-overlay.show').forEach(closeModal);
+                closeSidebar();
+            }
+        });
 
             // Jika validasi booking gagal, buka kembali modal kamar terkait.
             @if($errors->any() && old('kamar_id'))
