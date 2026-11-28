@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -79,15 +80,42 @@ return new class extends Migration
             $table->foreignId('contract_id')->nullable()->after('booking_id')->constrained('contracts')->restrictOnDelete();
             $table->string('nomor_invoice', 30)->nullable()->unique()->after('id');
             $table->unsignedBigInteger('denda')->default(0)->after('jumlah');
-            $table->enum('status', [
-                'belum_dibayar',
-                'menunggu_verifikasi',
-                'dibayar_sebagian',
-                'lunas',
-                'terlambat',
-                'dibatalkan',
-            ])->default('belum_dibayar')->change();
         });
+
+        // Penyesuaian enum status khusus PostgreSQL dan MySQL
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            // Hapus batasan status lama yang hanya mengizinkan empat nilai
+            DB::statement('
+                ALTER TABLE tagihans
+                DROP CONSTRAINT IF EXISTS tagihans_status_check
+            ');
+
+            // Buat batasan status baru dengan enam nilai
+            DB::statement("
+                ALTER TABLE tagihans
+                ADD CONSTRAINT tagihans_status_check
+                CHECK (status IN (
+                    'belum_dibayar',
+                    'menunggu_verifikasi',
+                    'dibayar_sebagian',
+                    'lunas',
+                    'terlambat',
+                    'dibatalkan'
+                ))
+            ");
+        } else {
+            // Pertahankan perilaku enum pada MySQL
+            Schema::table('tagihans', function (Blueprint $table) {
+                $table->enum('status', [
+                    'belum_dibayar',
+                    'menunggu_verifikasi',
+                    'dibayar_sebagian',
+                    'lunas',
+                    'terlambat',
+                    'dibatalkan',
+                ])->default('belum_dibayar')->change();
+            });
+        }
 
         // 7. Rincian Item Tagihan (sewa pokok, listrik, air, parkir, denda)
         Schema::create('invoice_items', function (Blueprint $table) {
